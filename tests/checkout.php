@@ -14,7 +14,7 @@ require __DIR__ . '/lib/bootstrap.php';
 use mindstellar\billing\CallbackResult;
 use mindstellar\billing\Order;
 use mindstellar\razorpay\Config;
-use mindstellar\razorpay\Http\HttpException;
+use mindstellar\http\HttpException;
 use mindstellar\razorpay\RazorpayGateway;
 use mindstellar\razorpay\Signature;
 
@@ -58,6 +58,7 @@ pin('the Razorpay order is remembered on the order', 'order_Test1', $orders->fin
 pin('which stays pending', Order::STATUS_PENDING, $orders->find(1)->getStatus());
 pin('and records it was opened in test mode', false, $orders->find(1)->meta(RazorpayGateway::META_LIVE));
 check('the key secret is in no request body', !str_contains((string) $req['body'], KEY_SECRET));
+pin('core\'s client gets the plugin\'s timeouts', array('connect_timeout' => 10, 'timeout' => 30), end($http->options));
 
 $jpy = $orders->add(1_000_000_000, 'JPY');
 $http->on('POST', 'orders', 200, array('id' => 'order_Jpy', 'amount' => 1000, 'currency' => 'JPY'));
@@ -187,5 +188,29 @@ try {
     $threw = true;
 }
 check('Razorpay down throws, so the caller can say "processing"', $threw);
+
+harness_section('errors never carry the key');
+
+$auth     = base64_encode(KEY_ID . ':' . KEY_SECRET);
+$messages = array();
+foreach (array(401 => array('error' => array('code' => 'BAD_REQUEST_ERROR', 'description' => 'Authentication failed')), 500 => array(), 200 => null) as $code => $body) {
+    $http->routes['GET payments/pay_Test1'] = array('status' => $code, 'headers' => array(), 'body' => $body === null ? 'not json' : json_encode($body));
+    try {
+        $gateway->processPayment('pay_Test1', 1);
+    } catch (HttpException $e) {
+        $messages[] = $e->getMessage();
+    }
+}
+$http->down('GET', 'payments/pay_Test1');
+try {
+    $gateway->processPayment('pay_Test1', 1);
+} catch (HttpException $e) {
+    $messages[] = $e->getMessage();
+}
+pin('a refusal, a server error, a bad body and no answer each throw', 4, count($messages));
+pin('with Razorpay\'s reason or the status only', array('Razorpay answered 401: Authentication failed', 'Razorpay answered 500', 'Razorpay sent a response that is not JSON', 'Could not reach api.razorpay.com: timeout'), $messages);
+check('none holds the key id, the secret or the Authorization header', array_filter($messages, static fn (string $m): bool => str_contains($m, KEY_SECRET) || str_contains($m, KEY_ID) || str_contains($m, $auth) || stripos($m, 'basic') !== false) === array());
+$refund = $gateway->refund($orders->add(499_000_000, 'INR', 'pay_Test1', 'paid'));
+check('nor the reason a refund shows the admin', !str_contains($refund->getMessage(), KEY_SECRET) && !str_contains($refund->getMessage(), $auth));
 
 exit(harness_result());

@@ -16,8 +16,8 @@ namespace mindstellar\razorpay;
 use Closure;
 use mindstellar\billing\Order;
 use mindstellar\billing\PaymentGatewayRegistry;
+use mindstellar\http\CurlHttpClient;
 use mindstellar\job\Job;
-use mindstellar\razorpay\Http\CurlClient;
 use mindstellar\settings\SettingsPageRegistry;
 use Params;
 use Throwable;
@@ -87,7 +87,7 @@ final class Plugin
             return (self::$factory)();
         }
 
-        return new RazorpayGateway(Config::fromSettings(), new CurlClient(), new CoreOrderStore());
+        return new RazorpayGateway(Config::fromSettings(), new CurlHttpClient(), new CoreOrderStore());
     }
 
     /**
@@ -355,7 +355,7 @@ final class Plugin
             sprintf(__('Retry it under Tools > System info > Jobs (job #%d), and check the order in Billing > Orders.', 'razorpay'), (int) $id),
         );
         error_log('Razorpay: job #' . (int) $id . ' (' . $type . ') gave up: ' . $error);
-        self::mailAdmin($lines);
+        osc_mail_admin(__('Razorpay: a payment needs checking', 'razorpay'), array_values(array_filter($lines)));
     }
 
     /**
@@ -378,38 +378,13 @@ final class Plugin
             error_log('Razorpay: could not record the notice for ' . $paymentId . ': ' . $e->getMessage());
         }
 
-        self::mailAdmin(array(
+        osc_mail_admin(__('Razorpay: a payment needs checking', 'razorpay'), array(
             sprintf(__('Razorpay took a payment that was not credited, because %s.', 'razorpay'), $reason),
             sprintf(__('Razorpay payment: %s', 'razorpay'), $paymentId),
             sprintf(__('Check order #%d in Billing > Orders, and refund the payment in Razorpay or mark the order paid.', 'razorpay'), $orderId),
         ));
 
         return true;
-    }
-
-    /**
-     * Mail these lines to the site's contact address.
-     *
-     * @param string[] $lines
-     *
-     * @return void
-     */
-    private static function mailAdmin(array $lines): void
-    {
-        $body = '';
-        foreach (array_filter($lines) as $line) {
-            $body .= '<p>' . osc_esc_html($line) . '</p>';
-        }
-
-        try {
-            osc_sendMail(array(
-                'to'      => osc_contact_email(),
-                'subject' => __('Razorpay: a payment needs checking', 'razorpay'),
-                'body'    => $body,
-            ));
-        } catch (Throwable $e) {
-            error_log('Razorpay: could not mail the admin: ' . $e->getMessage());
-        }
     }
 
     /**

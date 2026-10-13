@@ -53,6 +53,15 @@ function osc_core_url($name, $args = array())
 function osc_add_flash_error_message($msg, $section = 'pubMessages')
 {
 }
+$GLOBALS['mails'] = array();
+if (!function_exists('osc_mail_admin')) {
+    function osc_mail_admin(string $subject, array $lines): bool
+    {
+        $GLOBALS['mails'][] = array($subject, $lines);
+
+        return true;
+    }
+}
 
 require_once ABS_PATH . 'oc-includes/osclass/helpers/hBilling.php';
 require_once ABS_PATH . 'oc-includes/osclass/helpers/hSettings.php';
@@ -240,6 +249,7 @@ pin('a late payment for an order closed unpaid credits nothing', array(Order::ST
 pin('and the admin is told', array(array($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed')), $alerts);
 check('the notice goes out once per payment', Plugin::strandedPayment($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed'));
 check('not twice', !Plugin::strandedPayment($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed'));
+pin('one admin mail for that payment', 1, count(array_filter($GLOBALS['mails'], static fn (array $m): bool => str_contains(implode(' ', $m[1]), 'pay_Test' . $late->getId()))));
 check('another payment gets its own', Plugin::strandedPayment($late->getId(), 'pay_Other', 'the order is failed'));
 
 harness_section('refund, then its webhook');

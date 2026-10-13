@@ -33,7 +33,7 @@ foreach (array('PaymentGateway', 'RefundableGateway', 'DashboardLinkGateway', 'C
 
 // Other core classes the plugin names, such as PaymentGatewayRegistry, load from the same checkout.
 spl_autoload_register(static function (string $class): void {
-    foreach (array('mindstellar\\billing\\' => 'billing', 'mindstellar\\base\\' => 'base', 'mindstellar\\currency\\' => 'currency') as $prefix => $dir) {
+    foreach (array('mindstellar\\billing\\' => 'billing', 'mindstellar\\base\\' => 'base', 'mindstellar\\currency\\' => 'currency', 'mindstellar\\http\\' => 'http') as $prefix => $dir) {
         $file = core_path() . '/oc-includes/osclass/classes/' . $dir . '/' . substr($class, strlen($prefix)) . '.php';
         if (strncmp($class, $prefix, strlen($prefix)) === 0 && is_file($file)) {
             require $file;
@@ -75,6 +75,16 @@ if (!function_exists('osc_add_flash_error_message')) {
     function osc_add_flash_warning_message($msg, $section = 'pubMessages')
     {
         $GLOBALS['flash'][] = array('warning', $msg);
+    }
+}
+
+$GLOBALS['mails'] = array();
+if (!function_exists('osc_mail_admin')) {
+    function osc_mail_admin(string $subject, array $lines): bool
+    {
+        $GLOBALS['mails'][] = array($subject, $lines);
+
+        return true;
     }
 }
 

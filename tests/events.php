@@ -96,7 +96,7 @@ $http->down('GET', 'payments/pay_Test1');
 $threw = false;
 try {
     $trigger(event('payment.captured', payment($order)));
-} catch (\mindstellar\razorpay\Http\HttpException $e) {
+} catch (\mindstellar\http\HttpException $e) {
     $threw = true;
 }
 check('Razorpay down throws, so the webhook queues the payment', $threw);

@@ -4,7 +4,7 @@
   "type": "plugin",
   "categories": ["payments"],
   "tags": ["billing", "payments", "razorpay", "upi", "india", "checkout"],
-  "short_description": "Take UPI, card, netbanking and wallet payments for credit packages through Razorpay Checkout, with signed webhooks and refunds from the admin.",
+  "short_description": "Take UPI, card, netbanking and wallet payments for credit packages through Razorpay, with signed webhooks and refunds from the admin.",
   "icon": "assets/icon.svg",
   "license": "GPL-3.0-or-later",
   "support": {

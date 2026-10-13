@@ -20,8 +20,8 @@ use mindstellar\billing\CheckoutIntent;
 use mindstellar\billing\DashboardLinkGateway;
 use mindstellar\billing\Order;
 use mindstellar\billing\RefundableGateway;
-use mindstellar\razorpay\Http\HttpClient;
-use mindstellar\razorpay\Http\HttpException;
+use mindstellar\http\HttpClient;
+use mindstellar\http\HttpException;
 use Throwable;
 
 /**

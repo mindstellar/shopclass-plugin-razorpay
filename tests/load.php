@@ -83,6 +83,10 @@ pin('jobs, the daily check and the give-up mail', array(
 pin('the test-mode notice', array(array(Plugin::class, 'adminNotice')), $GLOBALS['__hooks']['admin_page_header'] ?? null);
 check('job types are namespaced', preg_match('/^[a-z0-9_]+\.[a-z0-9_.]+$/', Plugin::JOB_PAYMENT) && preg_match('/^[a-z0-9_]+\.[a-z0-9_.]+$/', Plugin::JOB_RECONCILE));
 
+$index = (string) file_get_contents(__DIR__ . '/../index.php');
+check('an older core without the HTTP client or admin mail keeps the plugin off', str_contains($index, "interface_exists('mindstellar\\\\http\\\\HttpClient')") && str_contains($index, "function_exists('osc_mail_admin')"));
+check('the plugin ships no HTTP client of its own', !is_dir(__DIR__ . '/../src/Http'));
+
 harness_section('the pay page script');
 
 $js = (string) file_get_contents(__DIR__ . '/../assets/pay.js');

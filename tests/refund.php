@@ -43,7 +43,7 @@ $r = $gateway->refund($order);
 pin('a refusal is shown to the admin with Razorpay\'s reason', array(CallbackResult::OUTCOME_IGNORED, 'Razorpay answered 400: The payment has been fully refunded already'), array($r->getOutcome(), $r->getMessage()));
 
 $http->down('POST', 'payments/pay_Test1/refund');
-pin('Razorpay down is ignored with a reason', 'Razorpay could not be reached: timeout', $gateway->refund($order)->getMessage());
+pin('Razorpay down is ignored with a reason', 'Could not reach api.razorpay.com: timeout', $gateway->refund($order)->getMessage());
 
 $http->on('POST', 'payments/pay_Test1/refund', 200, array('status' => 'processed'));
 pin('an answer without a refund id changes nothing', 'Razorpay did not accept the refund', $gateway->refund($order)->getMessage());

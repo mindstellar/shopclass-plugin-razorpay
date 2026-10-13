@@ -141,7 +141,7 @@ msgstr ""
 msgid "Razorpay Payment"
 msgstr ""
 
-#: index.php:50
+#: index.php:53
 msgid "Razorpay Payment needs Shopclass 7.0 or later and is switched off. Update Shopclass to use it."
 msgstr ""
 
@@ -153,7 +153,7 @@ msgstr ""
 msgid "Razorpay does not take \"%s\""
 msgstr ""
 
-#: src/Plugin.php:426
+#: src/Plugin.php:401
 msgid "Razorpay is in test mode: no real money is taken. Switch to live mode before the site takes payments."
 msgstr ""
 
@@ -170,7 +170,7 @@ msgstr ""
 msgid "Razorpay payment: %s"
 msgstr ""
 
-#: src/Plugin.php:428
+#: src/Plugin.php:403
 msgid "Razorpay settings"
 msgstr ""
 
@@ -178,7 +178,8 @@ msgstr ""
 msgid "Razorpay took a payment that was not credited, because %s."
 msgstr ""
 
-#: src/Plugin.php:407
+#: src/Plugin.php:358
+#: src/Plugin.php:381
 msgid "Razorpay: a payment needs checking"
 msgstr ""
 

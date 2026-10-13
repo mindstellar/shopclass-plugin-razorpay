@@ -11,37 +11,41 @@
 
 use mindstellar\billing\CallbackResult;
 use mindstellar\billing\Order;
+use mindstellar\http\HttpClient;
+use mindstellar\http\HttpException;
 use mindstellar\razorpay\Config;
-use mindstellar\razorpay\Http\HttpClient;
-use mindstellar\razorpay\Http\HttpException;
 use mindstellar\razorpay\OrderStore;
 use mindstellar\razorpay\RazorpayGateway;
 use mindstellar\razorpay\Signature;
 
-/** Answers from a script and records every request. */
+/** Answers from a script and records every request, as core's HttpClient would. */
 final class FakeHttp implements HttpClient
 {
     /** @var array<int,array{method:string,url:string,headers:array,body:?string}> */
     public array $requests = array();
+
+    /** @var array<int,array<string,mixed>> the options of each request */
+    public array $options = array();
 
     /** @var array<string,array{status:int,body:string}|HttpException> "METHOD path" => answer */
     public array $routes = array();
 
     public function on(string $method, string $path, int $status, array $body): void
     {
-        $this->routes[$method . ' ' . $path] = array('status' => $status, 'body' => json_encode($body));
+        $this->routes[$method . ' ' . $path] = array('status' => $status, 'headers' => array('content-type' => 'application/json'), 'body' => json_encode($body));
     }
 
     public function down(string $method, string $path): void
     {
-        $this->routes[$method . ' ' . $path] = new HttpException('Razorpay could not be reached: timeout');
+        $this->routes[$method . ' ' . $path] = new HttpException('Could not reach api.razorpay.com: timeout');
     }
 
-    public function send(string $method, string $url, array $headers, ?string $body = null): array
+    public function send(string $method, string $url, array $headers = array(), ?string $body = null, array $options = array()): array
     {
         $this->requests[] = array('method' => $method, 'url' => $url, 'headers' => $headers, 'body' => $body);
+        $this->options[]  = $options;
         $path   = substr(strtok($url, '?'), strlen('https://api.razorpay.com/v1/'));
-        $answer = $this->routes[$method . ' ' . $path] ?? array('status' => 400, 'body' => '{"error":{"code":"BAD_REQUEST_ERROR","description":"The id provided does not exist"}}');
+        $answer = $this->routes[$method . ' ' . $path] ?? array('status' => 400, 'headers' => array(), 'body' => '{"error":{"code":"BAD_REQUEST_ERROR","description":"The id provided does not exist"}}');
         if ($answer instanceof HttpException) {
             throw $answer;
         }

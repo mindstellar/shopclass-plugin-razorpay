@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace mindstellar\razorpay;
 
-use mindstellar\razorpay\Http\HttpClient;
-use mindstellar\razorpay\Http\HttpException;
+use mindstellar\http\HttpClient;
+use mindstellar\http\HttpException;
 
 /**
  * The few Razorpay REST calls the gateway makes, with Basic auth. Every answer is decoded JSON.
@@ -22,6 +22,9 @@ use mindstellar\razorpay\Http\HttpException;
 final class RazorpayApi
 {
     public const BASE = 'https://api.razorpay.com/v1/';
+
+    /** Seconds to connect and to wait for the whole answer. */
+    public const OPTIONS = array('connect_timeout' => 10, 'timeout' => 30);
 
     public function __construct(
         private HttpClient $http,
@@ -107,7 +110,8 @@ final class RazorpayApi
      * @param array<string,mixed> $params
      *
      * @return array<string,mixed>
-     * @throws HttpException on a transport error, an error status or a body that is not JSON
+     * @throws HttpException on a transport error, an error status or a body that is not JSON. The
+     *                       message never holds the key or the Authorization header.
      */
     private function call(string $method, string $path, array $params = array()): array
     {
@@ -125,7 +129,7 @@ final class RazorpayApi
             $body                    = (string) json_encode($params === array() ? new \stdClass() : $params, JSON_UNESCAPED_SLASHES);
         }
 
-        $response = $this->http->send($method, self::BASE . $path, $headers, $body);
+        $response = $this->http->send($method, self::BASE . $path, $headers, $body, self::OPTIONS);
         $decoded  = json_decode($response['body'], true);
 
         if ($response['status'] < 200 || $response['status'] >= 300) {

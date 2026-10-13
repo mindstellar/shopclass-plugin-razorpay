@@ -11,7 +11,8 @@ credits once the payment is confirmed.
 - PHP 8.0 or later, with the curl extension
 - Cron running, for retries and the daily check of pending orders
 
-No shell, worker or Redis is needed. On a VPS with core's job worker, retries just run sooner.
+Works on plain shared hosting: no shell, worker or Redis is needed. On a VPS with core's job
+worker, retries just run sooner.
 
 ## Setup
 
@@ -38,8 +39,12 @@ No shell, worker or Redis is needed. On a VPS with core's job worker, retries ju
    still arrives only authorized, the plugin captures it when the amount matches the order.
 
 Razorpay shows at checkout once the key id, key secret and webhook secret for the active
-mode are set and the site's billing currency is one Razorpay takes. Any currency but INR
-needs international payments turned on in your Razorpay account.
+mode are set and the site's billing currency is one Razorpay takes.
+
+The **Currencies** setting lists the codes Razorpay is offered for, such as `INR, USD`.
+Leave it empty to use the billing currency. A list that leaves out the billing currency
+hides Razorpay at checkout. Any currency but INR needs international payments turned on
+in your Razorpay account.
 
 Saved secrets are never shown again. Leave a secret's box blank to keep it.
 
@@ -87,6 +92,11 @@ the site.
 
 Each site only acts on payments for Razorpay orders it created, so several sites can share
 an account. Give each site its own webhook.
+
+## Uninstall
+
+Uninstalling removes the plugin's settings, keys included. Orders, payments and credits
+stay in **Billing → Orders**. Remove the webhook in the Razorpay dashboard too.
 
 ## Translations
 

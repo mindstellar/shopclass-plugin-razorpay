@@ -15,8 +15,7 @@ use mindstellar\billing\CallbackResult;
 use mindstellar\billing\Order;
 use mindstellar\razorpay\Plugin;
 
-$GLOBALS['kv']    = array();
-$GLOBALS['mails'] = array();
+$GLOBALS['kv'] = array();
 function osc_kv_claim($group, $key, $ttl, $state = 'locked')
 {
     if (isset($GLOBALS['kv'][$group . '/' . $key])) {
@@ -25,18 +24,6 @@ function osc_kv_claim($group, $key, $ttl, $state = 'locked')
     $GLOBALS['kv'][$group . '/' . $key] = array($state, $ttl);
 
     return true;
-}
-function osc_sendMail($params)
-{
-    $GLOBALS['mails'][] = $params;
-}
-function osc_contact_email()
-{
-    return 'admin@shop.test';
-}
-function osc_esc_html($s)
-{
-    return htmlspecialchars((string) $s, ENT_QUOTES);
 }
 
 $http    = new FakeHttp();
@@ -89,8 +76,8 @@ pin('a pending order, a replay for its paid order, a hand-marked paid order and 
 harness_section('the notice');
 
 check('the first notice for a payment is sent', Plugin::strandedPayment(4, 'pay_Abc', 'the order is failed'));
-pin('to the contact address', 'admin@shop.test', $GLOBALS['mails'][0]['to'] ?? null);
-check('naming the payment and the order', str_contains($GLOBALS['mails'][0]['body'], 'pay_Abc') && str_contains($GLOBALS['mails'][0]['body'], '#4'));
+pin('through core\'s admin mail', 'Razorpay: a payment needs checking', $GLOBALS['mails'][0][0] ?? null);
+check('naming the payment and the order', str_contains(implode(' ', $GLOBALS['mails'][0][1]), 'pay_Abc') && str_contains(implode(' ', $GLOBALS['mails'][0][1]), '#4'));
 check('the next for the same payment is not', !Plugin::strandedPayment(4, 'pay_Abc', 'the order is failed'));
 pin('one mail', 1, count($GLOBALS['mails']));
 check('another payment is told about', Plugin::strandedPayment(5, 'pay_Def', 'the order is failed'));

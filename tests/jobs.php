@@ -12,7 +12,7 @@
 require __DIR__ . '/lib/bootstrap.php';
 
 use mindstellar\billing\Order;
-use mindstellar\razorpay\Http\HttpException;
+use mindstellar\http\HttpException;
 use mindstellar\razorpay\RazorpayGateway;
 
 $http    = new FakeHttp();

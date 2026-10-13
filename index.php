@@ -43,8 +43,11 @@ spl_autoload_register(static function (string $class): void {
 osc_register_plugin(osc_plugin_path(__FILE__), array(Plugin::class, 'install'));
 osc_add_hook(osc_plugin_path(__FILE__) . '_uninstall', array(Plugin::class, 'uninstall'));
 
-// Shopclass before 7.0 has no lazy gateway hook, so the plugin stays off there.
-if (!defined(PaymentGatewayRegistry::class . '::HOOK')) {
+// The plugin needs core's lazy gateway hook, HTTP client and admin mail, all in Shopclass 7.0.
+if (!defined(PaymentGatewayRegistry::class . '::HOOK')
+    || !interface_exists('mindstellar\\http\\HttpClient')
+    || !function_exists('osc_mail_admin')
+) {
     osc_add_hook('admin_page_header', static function (): void {
         echo '<div class="flashmessage flashmessage-warning" role="status">'
             . osc_esc_html(__('Razorpay Payment needs Shopclass 7.0 or later and is switched off. Update Shopclass to use it.', 'razorpay'))
