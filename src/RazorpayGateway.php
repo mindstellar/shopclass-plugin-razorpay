@@ -62,13 +62,17 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
     /** fn(string $paymentId, string $eventId): void -- queue a payment for a later retry. */
     private Closure $queue;
 
+    /** fn(int $orderId, string $paymentId, string $reason): void -- tell the admin about money that was not credited. */
+    private Closure $alert;
+
     public function __construct(
         private Config $config,
         HttpClient $http,
         private OrderStore $orders,
         ?Closure $input = null,
         ?Closure $settle = null,
-        ?Closure $queue = null
+        ?Closure $queue = null,
+        ?Closure $alert = null
     ) {
         $this->api    = new RazorpayApi($http, $config->keyId, $config->keySecret);
         $this->input  = $input ?? static fn (): array => array(
@@ -83,6 +87,9 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
                 array('payment' => $paymentId, 'event' => $eventId),
                 array('unique_key' => 'payment:' . $paymentId)
             );
+        };
+        $this->alert  = $alert ?? static function (int $orderId, string $paymentId, string $reason): void {
+            Plugin::strandedPayment($orderId, $paymentId, $reason);
         };
     }
 
@@ -461,7 +468,13 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
             case 'payment.captured':
             case 'order.paid':
             case 'refund.processed':
-                return $this->fromPayment($payment, null);
+                // The event is only a trigger: a signed retry can be days old, so act on the payment as it is now.
+                $id = (string) ($payment['id'] ?? '');
+                if (!preg_match('/^pay_[A-Za-z0-9]{1,40}$/', $id)) {
+                    return CallbackResult::ignored('not a payment');
+                }
+
+                return $this->fromPayment($this->api->payment($id), null);
 
             default:
                 return CallbackResult::ignored('event not handled');
@@ -511,6 +524,10 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
 
         $status = (string) ($payment['status'] ?? '');
         if ($status === 'captured') {
+            $stranded = $this->strandedReason($order, $payment);
+            if ($stranded !== null) {
+                ($this->alert)($order->getId(), $id, $stranded);
+            }
             // Razorpay's own figures; core refuses them when they differ from the order.
             return CallbackResult::paid(
                 $order->getId(),
@@ -524,6 +541,30 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
         }
 
         return CallbackResult::ignored('not paid yet');
+    }
+
+    /**
+     * Why a captured payment will not be credited to its order, or null when it will be (or already was).
+     *
+     * @param Order               $order
+     * @param array<string,mixed> $payment
+     *
+     * @return string|null
+     */
+    private function strandedReason(Order $order, array $payment): ?string
+    {
+        if (!$this->sameMoney($order, $payment['amount'] ?? null, $payment['currency'] ?? null)) {
+            return 'the amount or currency differs from the order';
+        }
+        $ref = (string) $order->getExternalRef();
+        if ($order->isPending() || $ref === (string) $payment['id']) {
+            return null;
+        }
+        if ($order->getStatus() === Order::STATUS_PAID && $ref === (string) ($payment['order_id'] ?? '')) {
+            return null;
+        }
+
+        return 'the order is ' . $order->getStatus();
     }
 
     /**

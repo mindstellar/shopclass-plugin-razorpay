@@ -10,6 +10,7 @@
 - A payment the site could not record is queued and fetched again; the admin is e-mailed if it still fails.
 - A daily check settles pending orders Razorpay never reported and closes ones left unpaid for two days.
 - Authorized payments are captured when the amount matches the order.
+- The admin is e-mailed once when Razorpay took money core could not credit, such as a late payment for a closed order.
 - Refunds from the admin order screen; full refunds made in Razorpay are recorded too.
 - A "View payment" link on the admin order screen opens the payment in the Razorpay dashboard.
 - Test and live mode with separate keys; test mode is offered only to signed-in admins.

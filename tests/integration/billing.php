@@ -56,6 +56,7 @@ function osc_add_flash_error_message($msg, $section = 'pubMessages')
 
 require_once ABS_PATH . 'oc-includes/osclass/helpers/hBilling.php';
 require_once ABS_PATH . 'oc-includes/osclass/helpers/hSettings.php';
+require_once ABS_PATH . 'oc-includes/osclass/helpers/hKv.php';
 
 spl_autoload_register(static function (string $class): void {
     $prefix = 'mindstellar\\razorpay\\';
@@ -120,15 +121,19 @@ $gateway = new RazorpayGateway(
     null, // the real Billing::handleCallback
     static function (string $id) use (&$queued): void {
         $queued[] = $id;
+    },
+    static function (int $orderId, string $paymentId, string $reason) use (&$alerts): void {
+        $alerts[] = array($orderId, $paymentId, $reason);
     }
 );
+$alerts = array();
 PaymentGatewayRegistry::getInstance()->register($gateway);
 check('offered at checkout for INR', isset(PaymentGatewayRegistry::getInstance()->available('INR')[RazorpayGateway::ID]));
 
 $buyer    = seed_user($admin, 'buyer', 'buyer@example.test');
 $newOrder = static fn (int $amount = 499_000_000, string $currency = 'INR'): Order => OrderStore::create($buyer, RazorpayGateway::ID, $amount, $currency, 100);
-$webhook  = static function (array $event, string $id = 'evt_1'): CallbackResult {
-    deliver($event, WHSEC, $id);
+$webhook  = static function (array $event, string $id = 'evt_1') use ($http): CallbackResult {
+    deliver(serve($http, $event), WHSEC, $id);
 
     // What core's callback route does with a POST from Razorpay.
     return Billing::handleCallback(RazorpayGateway::ID, array());
@@ -216,6 +221,26 @@ pin('the fresh one is left alone', Order::STATUS_PENDING, $status($fresh));
 $admin->query('UPDATE ' . DB_TABLE_PREFIX . 't_billing_order SET dt_date = NOW() - INTERVAL 3 DAY WHERE pk_i_id = ' . $short->getId());
 $gateway->reconcile();
 pin('after two days unpaid it is closed', Order::STATUS_FAILED, $status($short));
+
+$late = $short;
+foreach (range(1, 3) as $n) {
+    $store->attachRef($newOrder()->getId(), 'order_Busy' . $n);
+}
+$old = $newOrder();
+$store->attachRef($old->getId(), 'order_Test' . $old->getId());
+$admin->query('UPDATE ' . DB_TABLE_PREFIX . 't_billing_order SET dt_date = NOW() - INTERVAL 5 HOUR WHERE pk_i_id = ' . $old->getId());
+pin('with a limit, the oldest due order is checked first, however many fresh ones there are', array($old->getId()), array_map(static fn (Order $o): int => $o->getId(), $store->stalePending(3600, 1)));
+
+harness_section('a payment that cannot be credited');
+
+$alerts  = array();
+$balance = Wallet::balance($buyer);
+$webhook(event('payment.captured', payment($late)), 'evt_late');
+pin('a late payment for an order closed unpaid credits nothing', array(Order::STATUS_FAILED, $balance), array($status($late), Wallet::balance($buyer)));
+pin('and the admin is told', array(array($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed')), $alerts);
+check('the notice goes out once per payment', Plugin::strandedPayment($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed'));
+check('not twice', !Plugin::strandedPayment($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed'));
+check('another payment gets its own', Plugin::strandedPayment($late->getId(), 'pay_Other', 'the order is failed'));
 
 harness_section('refund, then its webhook');
 

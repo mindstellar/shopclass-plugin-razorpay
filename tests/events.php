@@ -22,7 +22,7 @@ $orders  = new MemoryOrders();
 $gateway = fake_gateway($http, $orders);
 $order   = $orders->add(499_000_000, 'INR', 'order_Test1');
 
-$decide = static fn (array $event): CallbackResult => $gateway->handleCallback(array(RazorpayGateway::TRUSTED => Verified::event($event)));
+$decide = static fn (array $event): CallbackResult => $gateway->handleCallback(array(RazorpayGateway::TRUSTED => Verified::event(serve($http, $event))));
 
 harness_section('event mapping');
 
@@ -44,7 +44,7 @@ pin('payment.authorized is captured, then paid', array(CallbackResult::OUTCOME_P
 $orders->set(1, Order::STATUS_PAID, 'pay_Test1');
 $count = count($http->requests);
 $r     = $decide(event('payment.authorized', payment($order, array('status' => 'authorized'))));
-pin('an authorized payment for an order already paid is not captured', array('order already settled', $count), array($r->getMessage(), count($http->requests)));
+pin('an authorized payment for an order already paid is only looked up, not captured', array('order already settled', $count + 1, 'GET payments/pay_Test1'), array($r->getMessage(), count($http->requests), $http->lastCall()));
 
 $refunded = payment($order, array('status' => 'refunded', 'amount_refunded' => 49900, 'refund_status' => 'full'));
 $r        = $decide(event('refund.processed', $refunded, array('refund' => array('entity' => array('id' => 'rfnd_1', 'amount' => 49900)))));
@@ -70,20 +70,51 @@ pin('an order of another gateway', 'not an order of this site', $r->getMessage()
 $r = $decide(event('payment.captured', array('id' => 'xyz') + payment($order)));
 pin('something that is not a payment', 'not a payment', $r->getMessage());
 
+harness_section('the event is only a trigger');
+
+$http    = new FakeHttp();
+$orders  = new MemoryOrders();
+$order   = $orders->add(499_000_000, 'INR', 'order_Test1');
+$gateway = fake_gateway($http, $orders);
+$trigger = static fn (array $event): CallbackResult => $gateway->handleCallback(array(RazorpayGateway::TRUSTED => Verified::event($event)));
+
+$http->on('GET', 'payments/pay_Test1', 200, payment($order, array('status' => 'refunded', 'amount_refunded' => 49900)));
+$r = $trigger(event('payment.captured', payment($order)));
+pin('the payment is fetched from Razorpay', 'GET payments/pay_Test1', $http->lastCall());
+pin('a stale payment.captured for a payment refunded since does not pay the order', CallbackResult::OUTCOME_REFUNDED, $r->getOutcome());
+
+$http->on('GET', 'payments/pay_Test1', 200, payment($order, array('status' => 'failed')));
+pin('nor one for a payment Razorpay says failed', 'a payment attempt failed', $trigger(event('order.paid', payment($order)))->getMessage());
+
+$http->on('GET', 'payments/pay_Test1', 200, payment($order, array('amount' => 100)));
+pin('Razorpay\'s current amount is what core compares', 1_000_000, $trigger(event('payment.captured', payment($order)))->getAmount());
+
+$count = count($http->requests);
+pin('a malformed payment id in the event is not looked up', array('not a payment', $count), array($trigger(event('payment.captured', array('id' => 'pay_../x') + payment($order)))->getMessage(), count($http->requests)));
+
+$http->down('GET', 'payments/pay_Test1');
+$threw = false;
+try {
+    $trigger(event('payment.captured', payment($order)));
+} catch (\mindstellar\razorpay\Http\HttpException $e) {
+    $threw = true;
+}
+check('Razorpay down throws, so the webhook queues the payment', $threw);
+
 harness_section('the webhook');
 
 $http    = new FakeHttp();
 $orders  = new MemoryOrders();
 $order   = $orders->add(499_000_000, 'INR', 'order_Test1');
 $gateway = settling_gateway($http, $orders);
-$paid    = event('payment.captured', payment($order));
+$paid    = serve($http, event('payment.captured', payment($order)));
 
 deliver($paid);
 $r = $gateway->handleCallback(array());
 pin('a signed event is settled', array('paid'), array_map(static fn ($x) => $x->getOutcome(), $GLOBALS['settled']));
 pin('the order is paid with the payment id', array(Order::STATUS_PAID, 'pay_Test1'), array($orders->find(1)->getStatus(), $orders->find(1)->getExternalRef()));
 check('and the route answers 200', !$r->isRetryable());
-pin('nothing was asked of Razorpay', array(), $http->requests);
+pin('the payment was fetched from Razorpay once', array('GET payments/pay_Test1'), $http->calls());
 
 $GLOBALS['settled'] = array();
 deliver($paid, WHSEC, 'evt_2');

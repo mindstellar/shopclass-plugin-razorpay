@@ -49,6 +49,9 @@ final class Plugin
 
     public const CHECKOUT_JS = 'https://checkout.razorpay.com/v1/checkout.js';
 
+    /** How long a notice about a payment that was not credited is remembered, in seconds. */
+    public const STRANDED_TTL = 7776000;
+
     /** fn(): RazorpayGateway -- replaces the real gateway in tests. */
     public static ?Closure $factory = null;
 
@@ -351,12 +354,53 @@ final class Plugin
             sprintf(__('Error: %s', 'razorpay'), (string) $error),
             sprintf(__('Retry it under Tools > System info > Jobs (job #%d), and check the order in Billing > Orders.', 'razorpay'), (int) $id),
         );
+        error_log('Razorpay: job #' . (int) $id . ' (' . $type . ') gave up: ' . $error);
+        self::mailAdmin($lines);
+    }
+
+    /**
+     * Tell the admin, once per payment, that Razorpay took money core did not credit.
+     *
+     * @param int    $orderId
+     * @param string $paymentId
+     * @param string $reason
+     *
+     * @return bool whether this call sent the notice
+     */
+    public static function strandedPayment(int $orderId, string $paymentId, string $reason): bool
+    {
+        error_log('Razorpay: payment ' . $paymentId . ' for order #' . $orderId . ' was captured but not credited: ' . $reason);
+        try {
+            if (!osc_kv_claim(self::PAGE, 'stranded:' . $paymentId, self::STRANDED_TTL, 'notified')) {
+                return false;
+            }
+        } catch (Throwable $e) {
+            error_log('Razorpay: could not record the notice for ' . $paymentId . ': ' . $e->getMessage());
+        }
+
+        self::mailAdmin(array(
+            sprintf(__('Razorpay took a payment that was not credited, because %s.', 'razorpay'), $reason),
+            sprintf(__('Razorpay payment: %s', 'razorpay'), $paymentId),
+            sprintf(__('Check order #%d in Billing > Orders, and refund the payment in Razorpay or mark the order paid.', 'razorpay'), $orderId),
+        ));
+
+        return true;
+    }
+
+    /**
+     * Mail these lines to the site's contact address.
+     *
+     * @param string[] $lines
+     *
+     * @return void
+     */
+    private static function mailAdmin(array $lines): void
+    {
         $body = '';
         foreach (array_filter($lines) as $line) {
             $body .= '<p>' . osc_esc_html($line) . '</p>';
         }
 
-        error_log('Razorpay: job #' . (int) $id . ' (' . $type . ') gave up: ' . $error);
         try {
             osc_sendMail(array(
                 'to'      => osc_contact_email(),

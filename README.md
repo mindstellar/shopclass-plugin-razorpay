@@ -65,6 +65,11 @@ fill in the live fields, then switch *Mode* to *Live*.
 - Once a day, pending Razorpay orders over an hour old are checked with Razorpay. One left
   unpaid for two days is closed.
 
+A webhook is only a trigger: the plugin fetches the payment from Razorpay before acting, so
+an old retried webhook cannot pay an order that was since refunded. If Razorpay took money the
+site cannot credit, such as a late payment for an order already closed, the contact address
+gets one e-mail for that payment.
+
 Every path goes through core's billing checks: amount, currency and owner must match,
 and a replayed webhook credits nothing.
 

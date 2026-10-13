@@ -138,11 +138,15 @@ final class MemoryOrders implements OrderStore
         }
     }
 
+    /** As CoreOrderStore: filtered by age first, oldest first, then limited. */
     public function stalePending(int $seconds, int $limit): array
     {
-        return array_values(array_filter($this->orders, static fn (Order $o): bool => $o->isPending()
+        $due = array_values(array_filter($this->orders, static fn (Order $o): bool => $o->isPending()
             && str_starts_with((string) $o->getExternalRef(), 'order_')
             && strtotime($o->getDate()) <= time() - $seconds));
+        usort($due, static fn (Order $a, Order $b): int => array($a->getDate(), $a->getId()) <=> array($b->getDate(), $b->getId()));
+
+        return array_slice($due, 0, $limit);
     }
 
     public function buyerEmail(int $userId): ?string
@@ -198,6 +202,7 @@ function fake_gateway(FakeHttp $http, MemoryOrders $orders, array $config = arra
     $GLOBALS['settled'] = array();
     $GLOBALS['queued']  = array();
     $GLOBALS['input']   = array('', '', '');
+    $GLOBALS['alerts']  = array();
 
     $gateway = null;
     $gateway = new RazorpayGateway(
@@ -213,6 +218,9 @@ function fake_gateway(FakeHttp $http, MemoryOrders $orders, array $config = arra
         },
         static function (string $paymentId, string $eventId): void {
             $GLOBALS['queued'][] = array($paymentId, $eventId);
+        },
+        static function (int $orderId, string $paymentId, string $reason): void {
+            $GLOBALS['alerts'][] = array($orderId, $paymentId, $reason);
         }
     );
 
@@ -268,6 +276,17 @@ function event(string $type, array $payment, array $extra = array()): array
         'payload'    => array('payment' => array('entity' => $payment)) + $extra,
         'created_at' => 1790000000,
     );
+}
+
+/** Have the fake API answer for the payment inside an event as the event says it is. */
+function serve(FakeHttp $http, array $event): array
+{
+    $payment = $event['payload']['payment']['entity'] ?? null;
+    if (is_array($payment) && isset($payment['id'])) {
+        $http->on('GET', 'payments/' . $payment['id'], 200, $payment);
+    }
+
+    return $event;
 }
 
 /** Put a signed webhook on the fake input. */

@@ -8,11 +8,11 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Language: \n"
 
-#: src/RazorpayGateway.php:209
+#: src/RazorpayGateway.php:216
 msgid "%d credits"
 msgstr ""
 
-#: src/Plugin.php:349
+#: src/Plugin.php:352
 msgid "A Razorpay payment could not be recorded after several tries."
 msgstr ""
 
@@ -28,7 +28,11 @@ msgstr ""
 msgid "Back to your orders"
 msgstr ""
 
-#: src/Plugin.php:316
+#: src/Plugin.php:384
+msgid "Check order #%d in Billing > Orders, and refund the payment in Razorpay or mark the order paid."
+msgstr ""
+
+#: src/Plugin.php:319
 msgid "Check pending Razorpay orders"
 msgstr ""
 
@@ -48,7 +52,7 @@ msgstr ""
 msgid "Currencies"
 msgstr ""
 
-#: src/Plugin.php:351
+#: src/Plugin.php:354
 msgid "Error: %s"
 msgstr ""
 
@@ -96,11 +100,11 @@ msgstr ""
 msgid "Order"
 msgstr ""
 
-#: src/Plugin.php:283
+#: src/Plugin.php:286
 msgid "Order #%d is paid."
 msgstr ""
 
-#: src/Plugin.php:288
+#: src/Plugin.php:291
 msgid "Order #%d was not paid."
 msgstr ""
 
@@ -112,8 +116,8 @@ msgstr ""
 msgid "Pay now"
 msgstr ""
 
-#: src/Plugin.php:141
-#: src/Plugin.php:142
+#: src/Plugin.php:144
+#: src/Plugin.php:145
 msgid "Pay with Razorpay"
 msgstr ""
 
@@ -121,11 +125,11 @@ msgstr ""
 msgid "Payment capture"
 msgstr ""
 
-#: src/Plugin.php:286
+#: src/Plugin.php:289
 msgid "Payment for order #%d is processing. Credits are added once Razorpay confirms it."
 msgstr ""
 
-#: src/Plugin.php:284
+#: src/Plugin.php:287
 msgid "Payment for order #%d received. Credits added."
 msgstr ""
 
@@ -149,7 +153,7 @@ msgstr ""
 msgid "Razorpay does not take \"%s\""
 msgstr ""
 
-#: src/Plugin.php:382
+#: src/Plugin.php:426
 msgid "Razorpay is in test mode: no real money is taken. Switch to live mode before the site takes payments."
 msgstr ""
 
@@ -157,27 +161,32 @@ msgstr ""
 msgid "Razorpay needs JavaScript. Turn it on in your browser, then reload this page."
 msgstr ""
 
-#: src/RazorpayGateway.php:654
+#: src/RazorpayGateway.php:695
 msgid "Razorpay payment could not be started. Please try again later."
 msgstr ""
 
-#: src/Plugin.php:350
+#: src/Plugin.php:353
+#: src/Plugin.php:383
 msgid "Razorpay payment: %s"
 msgstr ""
 
-#: src/Plugin.php:384
+#: src/Plugin.php:428
 msgid "Razorpay settings"
 msgstr ""
 
-#: src/Plugin.php:363
+#: src/Plugin.php:382
+msgid "Razorpay took a payment that was not credited, because %s."
+msgstr ""
+
+#: src/Plugin.php:407
 msgid "Razorpay: a payment needs checking"
 msgstr ""
 
-#: src/Plugin.php:313
+#: src/Plugin.php:316
 msgid "Record a Razorpay payment"
 msgstr ""
 
-#: src/Plugin.php:352
+#: src/Plugin.php:355
 msgid "Retry it under Tools > System info > Jobs (job #%d), and check the order in Billing > Orders."
 msgstr ""
 
@@ -209,8 +218,8 @@ msgstr ""
 msgid "Test webhook secret"
 msgstr ""
 
-#: src/Plugin.php:164
-#: src/Plugin.php:248
+#: src/Plugin.php:167
+#: src/Plugin.php:251
 msgid "That order is not available."
 msgstr ""
 

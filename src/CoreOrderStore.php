@@ -15,6 +15,7 @@ namespace mindstellar\razorpay;
 
 use mindstellar\billing\Order;
 use mindstellar\billing\OrderStore as Orders;
+use mindstellar\database\Db;
 
 /**
  * Orders through core's own order store.
@@ -48,17 +49,18 @@ final class CoreOrderStore implements OrderStore
 
     public function stalePending(int $seconds, int $limit): array
     {
-        $cutoff = time() - $seconds;
-        $out    = array();
-        $filter = array('status' => Order::STATUS_PENDING, 'gateway' => RazorpayGateway::ID);
-        foreach (Orders::search($filter, $limit) as $order) {
-            $ref = (string) $order->getExternalRef();
-            if (str_starts_with($ref, 'order_') && (int) strtotime($order->getDate()) <= $cutoff) {
-                $out[] = $order;
-            }
-        }
+        // Oldest first, filtered by age in SQL, so a busy hour of fresh checkouts cannot crowd out old orders.
+        $rows = Db::table(DB_TABLE_PREFIX . 't_billing_order')
+            ->where('s_gateway', RazorpayGateway::ID)
+            ->where('s_status', Order::STATUS_PENDING)
+            ->where('s_external_ref', 'LIKE', 'order\\_%')
+            ->where('dt_date', '<=', date('Y-m-d H:i:s', time() - $seconds))
+            ->orderBy('dt_date', 'ASC')
+            ->orderBy('pk_i_id', 'ASC')
+            ->limit($limit)
+            ->get();
 
-        return $out;
+        return array_map(static fn (array $row): Order => Order::fromRow($row), $rows);
     }
 
     public function buyerEmail(int $userId): ?string
