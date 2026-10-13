@@ -1,0 +1,255 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Razorpay Payment 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/mindstellar/shopclass-plugin-razorpay/issues\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: \n"
+
+#: src/RazorpayGateway.php:209
+msgid "%d credits"
+msgstr ""
+
+#: src/Plugin.php:349
+msgid "A Razorpay payment could not be recorded after several tries."
+msgstr ""
+
+#: settings.php:78
+msgid "Account"
+msgstr ""
+
+#: views/pay.php:40
+msgid "Amount"
+msgstr ""
+
+#: views/pay.php:77
+msgid "Back to your orders"
+msgstr ""
+
+#: src/Plugin.php:316
+msgid "Check pending Razorpay orders"
+msgstr ""
+
+#: settings.php:117
+msgid "Checkout"
+msgstr ""
+
+#: settings.php:132
+msgid "Comma-separated codes. Leave empty to use the billing currency. Any currency but INR needs international payments turned on in your Razorpay account."
+msgstr ""
+
+#: views/pay.php:44
+msgid "Credits"
+msgstr ""
+
+#: settings.php:130
+msgid "Currencies"
+msgstr ""
+
+#: src/Plugin.php:351
+msgid "Error: %s"
+msgstr ""
+
+#: settings.php:94
+msgid "From Accounts & Settings > API keys, in live mode."
+msgstr ""
+
+#: settings.php:91
+msgid "From Accounts & Settings > API keys, in test mode."
+msgstr ""
+
+#: settings.php:61
+msgid "In Razorpay, open Accounts & Settings > Webhooks, add a webhook with this URL, set a secret, and select these events:"
+msgstr ""
+
+#: settings.php:95
+msgid "Leave blank to keep the saved one."
+msgstr ""
+
+#: settings.php:87
+msgid "Live"
+msgstr ""
+
+#: settings.php:94
+msgid "Live key id"
+msgstr ""
+
+#: settings.php:95
+msgid "Live key secret"
+msgstr ""
+
+#: settings.php:96
+msgid "Live webhook secret"
+msgstr ""
+
+#: settings.php:83
+msgid "Mode"
+msgstr ""
+
+#: settings.php:122
+msgid "Name at checkout"
+msgstr ""
+
+#: views/pay.php:36
+msgid "Order"
+msgstr ""
+
+#: src/Plugin.php:283
+msgid "Order #%d is paid."
+msgstr ""
+
+#: src/Plugin.php:288
+msgid "Order #%d was not paid."
+msgstr ""
+
+#: views/pay.php:50
+msgid "Pay by UPI, card, netbanking or wallet in Razorpay's secure window. Your card details never reach this site."
+msgstr ""
+
+#: views/pay.php:62
+msgid "Pay now"
+msgstr ""
+
+#: src/Plugin.php:141
+#: src/Plugin.php:142
+msgid "Pay with Razorpay"
+msgstr ""
+
+#: settings.php:111
+msgid "Payment capture"
+msgstr ""
+
+#: src/Plugin.php:286
+msgid "Payment for order #%d is processing. Credits are added once Razorpay confirms it."
+msgstr ""
+
+#: src/Plugin.php:284
+msgid "Payment for order #%d received. Credits added."
+msgstr ""
+
+#: views/pay.php:61
+msgid "Payment received. Confirming it..."
+msgstr ""
+
+#: settings.php:73
+msgid "Razorpay Payment"
+msgstr ""
+
+#: index.php:50
+msgid "Razorpay Payment needs Shopclass 7.0 or later and is switched off. Update Shopclass to use it."
+msgstr ""
+
+#: views/pay.php:59
+msgid "Razorpay could not be loaded. Check your connection and reload this page."
+msgstr ""
+
+#: settings.php:141
+msgid "Razorpay does not take \"%s\""
+msgstr ""
+
+#: src/Plugin.php:382
+msgid "Razorpay is in test mode: no real money is taken. Switch to live mode before the site takes payments."
+msgstr ""
+
+#: views/pay.php:53
+msgid "Razorpay needs JavaScript. Turn it on in your browser, then reload this page."
+msgstr ""
+
+#: src/RazorpayGateway.php:654
+msgid "Razorpay payment could not be started. Please try again later."
+msgstr ""
+
+#: src/Plugin.php:350
+msgid "Razorpay payment: %s"
+msgstr ""
+
+#: src/Plugin.php:384
+msgid "Razorpay settings"
+msgstr ""
+
+#: src/Plugin.php:363
+msgid "Razorpay: a payment needs checking"
+msgstr ""
+
+#: src/Plugin.php:313
+msgid "Record a Razorpay payment"
+msgstr ""
+
+#: src/Plugin.php:352
+msgid "Retry it under Tools > System info > Jobs (job #%d), and check the order in Billing > Orders."
+msgstr ""
+
+#: settings.php:92
+msgid "Shown once by Razorpay when the key is made. Saved secrets are never shown again; leave blank to keep the saved one."
+msgstr ""
+
+#: settings.php:75
+msgid "Take UPI, card, netbanking and wallet payments for credit packages through Razorpay Checkout. Buyers pay in a window hosted by Razorpay, so no card data reaches this site."
+msgstr ""
+
+#: settings.php:86
+msgid "Test"
+msgstr ""
+
+#: settings.php:91
+msgid "Test key id"
+msgstr ""
+
+#: settings.php:92
+msgid "Test key secret"
+msgstr ""
+
+#: settings.php:84
+msgid "Test mode uses your test keys. No real money moves."
+msgstr ""
+
+#: settings.php:93
+msgid "Test webhook secret"
+msgstr ""
+
+#: src/Plugin.php:164
+#: src/Plugin.php:248
+msgid "That order is not available."
+msgstr ""
+
+#: views/pay.php:60
+msgid "The payment did not go through. You can try again."
+msgstr ""
+
+#: settings.php:96
+msgid "The secret you set on your live-mode webhook. Leave blank to keep the saved one."
+msgstr ""
+
+#: settings.php:93
+msgid "The secret you set on your test-mode webhook. Leave blank to keep the saved one."
+msgstr ""
+
+#: settings.php:65
+msgid "Then type the same secret into the webhook secret field for that mode. Test and live mode each need their own webhook."
+msgstr ""
+
+#: settings.php:54
+msgid "This does not look like a Razorpay secret"
+msgstr ""
+
+#: settings.php:36
+msgid "This should start with \"%s\""
+msgstr ""
+
+#: settings.php:69
+msgid "Turn on automatic capture in Razorpay under Accounts & Settings > Payment capture. If a payment still arrives only authorized, this plugin captures it once the amount matches the order."
+msgstr ""
+
+#: settings.php:123
+msgid "UPI, cards, netbanking (Razorpay)"
+msgstr ""
+
+#: settings.php:100
+msgid "Webhook"
+msgstr ""
+
+#: settings.php:105
+msgid "Webhook URL"
+msgstr ""
