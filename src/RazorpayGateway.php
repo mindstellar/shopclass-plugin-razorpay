@@ -225,7 +225,7 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
     }
 
     /**
-     * Whether Checkout's result is for this order's Razorpay order and carries Razorpay's signature.
+     * Whether Checkout's result is for this pending order's Razorpay order and carries Razorpay's signature.
      *
      * @param Order  $order
      * @param string $remoteId  razorpay_order_id as posted
@@ -237,7 +237,7 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
     public function verifyReturn(Order $order, string $remoteId, string $paymentId, string $signature): bool
     {
         $ref = (string) $order->getExternalRef();
-        if (!str_starts_with($ref, 'order_') || !hash_equals($ref, $remoteId)) {
+        if (!$order->isPending() || !str_starts_with($ref, 'order_') || !hash_equals($ref, $remoteId)) {
             return false;
         }
 

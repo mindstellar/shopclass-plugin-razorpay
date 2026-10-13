@@ -240,6 +240,29 @@ $store->attachRef($old->getId(), 'order_Test' . $old->getId());
 $admin->query('UPDATE ' . DB_TABLE_PREFIX . 't_billing_order SET dt_date = NOW() - INTERVAL 5 HOUR WHERE pk_i_id = ' . $old->getId());
 pin('with a limit, the oldest due order is checked first, however many fresh ones there are', array($old->getId()), array_map(static fn (Order $o): int => $o->getId(), $store->stalePending(3600, 1)));
 
+harness_section('which orders the daily check picks');
+
+$admin->query('UPDATE ' . DB_TABLE_PREFIX . "t_billing_order SET s_status = 'cancelled' WHERE s_status = 'pending'");
+$aged = static function (int $hours, ?string $ref, string $gateway = RazorpayGateway::ID) use ($admin, $buyer): Order {
+    $order = OrderStore::create($buyer, $gateway, 499_000_000, 'INR', 100);
+    $admin->query('UPDATE ' . DB_TABLE_PREFIX . 't_billing_order SET dt_date = NOW() - INTERVAL ' . $hours . ' HOUR, s_external_ref = '
+        . ($ref === null ? 'NULL' : "'" . $admin->real_escape_string($ref) . "'") . ' WHERE pk_i_id = ' . $order->getId());
+
+    return $order;
+};
+$ids = static fn (array $orders): array => array_map(static fn (Order $o): int => $o->getId(), $orders);
+
+$two   = $aged(2, 'order_Age2');
+$five  = $aged(5, 'order_Age5');
+$three = $aged(3, 'order_Age3');
+pin('with a limit of two, the 5 h then the 3 h order', array($five->getId(), $three->getId()), $ids($store->stalePending(3600, 2)));
+
+$aged(10, 'order_Paypal', 'paypal');
+$aged(10, null);
+$aged(10, 'pay_Old');
+pin('another gateway\'s order, and ours without a Razorpay order, are never picked', array($five->getId(), $three->getId(), $two->getId()), $ids($store->stalePending(3600, 10)));
+$admin->query('UPDATE ' . DB_TABLE_PREFIX . "t_billing_order SET s_status = 'cancelled' WHERE s_status = 'pending'");
+
 harness_section('a payment that cannot be credited');
 
 $alerts  = array();

@@ -169,7 +169,7 @@ final class Plugin
             return null;
         }
 
-        $options = $gateway->payOptions($order, $orders->buyerEmail($userId));
+        $options = $order->isPending() ? $gateway->payOptions($order, $orders->buyerEmail($userId)) : null;
         if ($options === null) {
             self::flashOutcome($order->getId(), $order->getStatus(), $order->getStatus());
 

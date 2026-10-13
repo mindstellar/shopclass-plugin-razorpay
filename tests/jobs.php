@@ -39,14 +39,19 @@ $http->on('POST', 'payments/pay_Auth/capture', 200, payment($auth, array('id' =>
 
 harness_section('the daily check');
 
-pin('orders over an hour old with a Razorpay order, in this mode, are checked', 3, $gateway->reconcile());
+try {
+    $checked = $gateway->reconcile();
+} catch (Throwable $e) {
+    $checked = $e->getMessage();
+}
+pin('orders over an hour old with a Razorpay order, in this mode, are checked', 3, $checked);
 pin('a captured payment Razorpay never reported settles its order', array(Order::STATUS_PAID, 'pay_Stale'), array($orders->find($stale->getId())->getStatus(), $orders->find($stale->getId())->getExternalRef()));
 pin('an authorized one is captured and settled', Order::STATUS_PAID, $orders->find($auth->getId())->getStatus());
 pin('an order unpaid for two days is closed', Order::STATUS_FAILED, $orders->find($unpaid->getId())->getStatus());
 pin('a fresh order is left alone', Order::STATUS_PENDING, $orders->find($fresh->getId())->getStatus());
 pin('an order without a Razorpay order is left alone', Order::STATUS_PENDING, $orders->find($noRef->getId())->getStatus());
 pin('a live order is not looked up with test keys', Order::STATUS_PENDING, $orders->find($live->getId())->getStatus());
-check('nor asked about', !in_array('GET orders/order_Live/payments', $http->calls(), true));
+pin('nor asked about', array(), array_values(array_filter($http->calls(), static fn (string $c): bool => str_contains($c, 'order_Live'))));
 
 $young = $orders->add(499_000_000, 'INR', 'order_Young', 'pending', 'razorpay', $hours(5));
 $http->on('GET', 'orders/order_Young/payments', 200, array('items' => array()));

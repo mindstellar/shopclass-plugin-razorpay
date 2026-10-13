@@ -87,6 +87,15 @@ $index = (string) file_get_contents(__DIR__ . '/../index.php');
 check('an older core without the HTTP client or admin mail keeps the plugin off', str_contains($index, "interface_exists('mindstellar\\\\http\\\\HttpClient')") && str_contains($index, "function_exists('osc_mail_admin')"));
 check('the plugin ships no HTTP client of its own', !is_dir(__DIR__ . '/../src/Http'));
 
+harness_section('on a core without admin mail');
+
+$child = shell_exec('RAZORPAY_TEST_OLD_CORE=1 ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/lib/old-core.php'));
+$old   = json_decode((string) $child, true);
+check('the check ran on a core without osc_mail_admin()', is_array($old) && $old['mail_admin'] === false, (string) $child);
+pin('no settings page and no routes', array(array(), array()), array($old['settings'] ?? null, $old['routes'] ?? null));
+pin('only install, uninstall and the notice are hooked', array('razorpay/index.php_uninstall', 'admin_page_header'), $old['hooks'] ?? null);
+check('the notice tells the admin to update', str_contains((string) ($old['notice'] ?? ''), 'needs Shopclass 7.0 or later'));
+
 harness_section('the pay page script');
 
 $js = (string) file_get_contents(__DIR__ . '/../assets/pay.js');

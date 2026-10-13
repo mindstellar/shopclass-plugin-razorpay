@@ -16,8 +16,12 @@ use mindstellar\billing\Order;
 use mindstellar\razorpay\Plugin;
 
 $GLOBALS['kv'] = array();
+$GLOBALS['kvDown'] = false;
 function osc_kv_claim($group, $key, $ttl, $state = 'locked')
 {
+    if ($GLOBALS['kvDown']) {
+        throw new RuntimeException('t_key_value is missing');
+    }
     if (isset($GLOBALS['kv'][$group . '/' . $key])) {
         return false;
     }
@@ -61,6 +65,11 @@ $pendingShort = $add();
 $fetch($pendingShort, array('amount' => 100));
 pin('a payment for another amount', array(array($pendingShort->getId(), 'pay_Test' . $pendingShort->getId(), 'the amount or currency differs from the order')), $GLOBALS['alerts']);
 
+$GLOBALS['alerts'] = array();
+$usd = $add();
+$fetch($usd, array('currency' => 'USD'));
+pin('a payment of the same figure in another currency', array(array($usd->getId(), 'pay_Test' . $usd->getId(), 'the amount or currency differs from the order')), $GLOBALS['alerts']);
+
 harness_section('when nothing is wrong');
 
 $GLOBALS['alerts'] = array();
@@ -81,6 +90,16 @@ check('naming the payment and the order', str_contains(implode(' ', $GLOBALS['ma
 check('the next for the same payment is not', !Plugin::strandedPayment(4, 'pay_Abc', 'the order is failed'));
 pin('one mail', 1, count($GLOBALS['mails']));
 check('another payment is told about', Plugin::strandedPayment(5, 'pay_Def', 'the order is failed'));
+$GLOBALS['kvDown'] = true;
+$mailCount = count($GLOBALS['mails']);
+try {
+    $sent = Plugin::strandedPayment(6, 'pay_Ghi', 'the order is failed');
+} catch (Throwable $e) {
+    $sent = $e->getMessage();
+}
+pin('when the flag cannot be stored, the notice still goes out', true, $sent);
+pin('by mail', $mailCount + 1, count($GLOBALS['mails']));
+$GLOBALS['kvDown'] = false;
 pin('the flag is kept for 90 days', array('notified', 7776000), $GLOBALS['kv']['razorpay/stranded:pay_Abc'] ?? null);
 
 exit(harness_result());

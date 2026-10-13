@@ -159,6 +159,24 @@ $r = $broken->handleCallback(array());
 check('Razorpay is told to retry', $r->isRetryable());
 pin('and only the payment id and event id are queued', array(array('pay_Test1', 'evt_42')), $GLOBALS['queued']);
 
+$GLOBALS['enqueued'] = array();
+function osc_job_enqueue($type, $payload = array(), $options = array())
+{
+    $GLOBALS['enqueued'][] = array($type, $payload, $options);
+
+    return 1;
+}
+$realQueue = new RazorpayGateway(fake_config(), $http, $orders, static fn () => $GLOBALS['input'], static function (array $r): CallbackResult {
+    throw new RuntimeException('db down');
+});
+deliver(event('payment.captured', payment($order)), WHSEC, 'evt_77');
+$realQueue->handleCallback(array());
+pin('the real queue gets one payment job holding only the ids, one per payment', array(array(
+    \mindstellar\razorpay\Plugin::JOB_PAYMENT,
+    array('payment' => 'pay_Test1', 'event' => 'evt_77'),
+    array('unique_key' => 'payment:pay_Test1'),
+)), $GLOBALS['enqueued']);
+
 $noQueue = new RazorpayGateway(fake_config(), $http, $orders, static fn () => $GLOBALS['input'], static function (array $r): CallbackResult {
     throw new RuntimeException('db down');
 }, static function (string $id, string $event): void {

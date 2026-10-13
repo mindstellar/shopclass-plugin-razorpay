@@ -13,8 +13,8 @@ require __DIR__ . '/lib/bootstrap.php';
 
 use mindstellar\billing\CallbackResult;
 use mindstellar\billing\Order;
-use mindstellar\razorpay\Config;
 use mindstellar\http\HttpException;
+use mindstellar\razorpay\Config;
 use mindstellar\razorpay\RazorpayGateway;
 use mindstellar\razorpay\Signature;
 
@@ -30,6 +30,8 @@ check('not when the billing currency is not allowed', !fake_gateway($http, $orde
 check('yes when it is', fake_gateway($http, $orders, array('currencies' => array('USD', 'INR')))->isConfigured());
 check('in test mode, not offered to a buyer who is not an admin', !fake_gateway($http, $orders, array('admin' => false))->isConfigured());
 check('but webhooks and lookups still work for them', fake_gateway($http, $orders, array('admin' => false))->hasKeys());
+$noCheck = new RazorpayGateway(new Config('test', KEY_ID, KEY_SECRET, WHSEC, 'Razorpay', array(), 'INR', 'Shop', static fn (int $id): string => '', '', null), $http, $orders);
+check('in test mode with no way to tell an admin, not offered', !$noCheck->isConfigured());
 check('in live mode, offered to everyone', fake_gateway($http, $orders, array('mode' => 'live', 'admin' => false))->isConfigured());
 pin('the billing currency when none are listed', array('INR'), fake_gateway($http, $orders)->getSupportedCurrencies());
 pin('nothing when Razorpay does not take the billing currency', array(), fake_gateway($http, $orders, array('billing' => 'XYZ'))->getSupportedCurrencies());
@@ -90,6 +92,11 @@ $wrong = $orders->add();
 $gateway->createCheckout($wrong);
 pin('a Razorpay order for another amount is not used', Order::STATUS_FAILED, $orders->find($wrong->getId())->getStatus());
 
+$http->on('POST', 'orders', 200, array('id' => 'order_Usd', 'amount' => 49900, 'currency' => 'USD'));
+$usd = $orders->add();
+$gateway->createCheckout($usd);
+pin('a Razorpay order in another currency is not used', array(Order::STATUS_FAILED, null), array($orders->find($usd->getId())->getStatus(), $orders->find($usd->getId())->getExternalRef()));
+
 $count = count($http->requests);
 $odd   = $orders->add(9_995_000, 'INR');
 $gateway->createCheckout($odd);
@@ -122,6 +129,9 @@ pin('everything Checkout needs, and no secret', array(
 check('no e-mail, no prefill', !isset($gateway->payOptions($orders->find(1))['prefill']));
 pin('a paid order has nothing to pay', null, $gateway->payOptions($orders->add(499_000_000, 'INR', 'pay_X', 'paid')));
 pin('nor an order without a Razorpay order', null, $gateway->payOptions($orders->add()));
+$failed = $orders->add(499_000_000, 'INR', 'order_Test1x', Order::STATUS_FAILED);
+pin('nor a failed order that still holds its Razorpay order', null, $gateway->payOptions($failed));
+check('whose signed return is refused too', !$gateway->verifyReturn($failed, 'order_Test1x', 'pay_1', Signature::signCheckout('order_Test1x', 'pay_1', KEY_SECRET)));
 
 harness_section('the signed return');
 
@@ -172,6 +182,15 @@ $count = count($http->requests);
 $http->on('GET', 'payments/pay_Test1', 200, payment($order, array('status' => 'authorized', 'amount' => 100)));
 pin('an authorized payment for another amount is not captured', 'authorized amount differs from the order', $gateway->processPayment('pay_Test1', 1)->getMessage());
 pin('Razorpay is asked only for the payment', $count + 1, count($http->requests));
+
+$count = count($http->requests);
+$http->on('GET', 'payments/pay_Test1', 200, payment($order, array('status' => 'authorized', 'currency' => 'USD')));
+pin('an authorized payment of the same figure in another currency is not captured', array('authorized amount differs from the order', $count + 1), array($gateway->processPayment('pay_Test1', 1)->getMessage(), count($http->requests)));
+
+$http->on('GET', 'payments/pay_Test1', 200, payment($order, array('status' => 'captured', 'amount_refunded' => 49900)));
+pin('a captured payment refunded in full refunds the order', CallbackResult::OUTCOME_REFUNDED, $gateway->processPayment('pay_Test1', 1)->getOutcome());
+$http->on('GET', 'payments/pay_Test1', 200, payment($order, array('status' => 'captured', 'amount_refunded' => 49899)));
+pin('one paisa short of full does not', CallbackResult::OUTCOME_PAID, $gateway->processPayment('pay_Test1', 1)->getOutcome());
 
 $http->on('GET', 'payments/pay_Test1', 200, payment($order, array('status' => 'failed')));
 pin('a failed attempt leaves the order open', 'a payment attempt failed', $gateway->processPayment('pay_Test1', 1)->getMessage());

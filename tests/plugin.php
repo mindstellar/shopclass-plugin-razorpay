@@ -100,6 +100,33 @@ Plugin::settleReturn($gateway, $orders, 1, 7, 'order_Test1', 'pay_Test1', $sig);
 pin('a resubmit for a paid order does not call Razorpay again', $count, count($http->requests));
 pin('and just shows it paid', array('ok', 'Order #1 is paid.'), $GLOBALS['flash'][0] ?? null);
 
+harness_section('a closed order keeps its Razorpay order but cannot be paid');
+
+$http    = new FakeHttp();
+$orders  = new MemoryOrders();
+$gateway = settling_gateway($http, $orders);
+$closed  = $orders->add(499_000_000, 'INR', 'order_Test1', Order::STATUS_FAILED);
+$http->on('GET', 'payments/pay_Test1', 200, payment($closed));
+
+$GLOBALS['flash'] = array();
+pin('the pay page shows no pay button for a failed order', null, Plugin::payView($gateway, $orders, 1, 7));
+pin('and says it was not paid', 'warning', $GLOBALS['flash'][0][0] ?? null);
+$sig = Signature::signCheckout('order_Test1', 'pay_Test1', KEY_SECRET);
+pin('a validly signed return leaves it failed', Order::STATUS_FAILED, Plugin::settleReturn($gateway, $orders, 1, 7, 'order_Test1', 'pay_Test1', $sig));
+pin('without calling Razorpay', array(), $http->requests);
+
+harness_section('the return settles only the order it was posted for');
+
+$http    = new FakeHttp();
+$orders  = new MemoryOrders();
+$gateway = settling_gateway($http, $orders);
+$mine    = $orders->add(499_000_000, 'INR', 'order_A');
+$other   = $orders->add(499_000_000, 'INR', 'order_B');
+$http->on('GET', 'payments/pay_X', 200, payment($other, array('id' => 'pay_X', 'order_id' => 'order_B')));
+$sig = Signature::signCheckout('order_A', 'pay_X', KEY_SECRET);
+pin('a payment that belongs to another order does not settle this one', Order::STATUS_PENDING, Plugin::settleReturn($gateway, $orders, $mine->getId(), 7, 'order_A', 'pay_X', $sig));
+pin('nor the other one', Order::STATUS_PENDING, $orders->find($other->getId())->getStatus());
+
 harness_section('the job handlers');
 
 $http    = new FakeHttp();
@@ -112,8 +139,9 @@ Plugin::$factory = static fn (): RazorpayGateway => $gateway;
 Plugin::registerJobs();
 check('both job types have a handler', isset($GLOBALS['jobs'][Plugin::JOB_PAYMENT], $GLOBALS['jobs'][Plugin::JOB_RECONCILE]));
 
-($GLOBALS['jobs'][Plugin::JOB_PAYMENT])(new Job(array('pk_i_id' => 1), array('payment' => 'pay_Test1', 'event' => 'evt_1')));
-pin('the payment job fetches that payment from Razorpay', 'GET payments/pay_Test1', $http->lastCall());
+$http->on('GET', 'payments/pay_Job9', 200, payment($order, array('id' => 'pay_Job9')));
+($GLOBALS['jobs'][Plugin::JOB_PAYMENT])(new Job(array('pk_i_id' => 1), array('payment' => 'pay_Job9', 'event' => 'evt_1')));
+pin('the payment job fetches the payment its payload names', array('GET payments/pay_Job9'), $http->calls());
 pin('and settles its order', Order::STATUS_PAID, $orders->find(1)->getStatus());
 check('the gateway was registered for the job', PaymentGatewayRegistry::getInstance()->get('razorpay') === $gateway);
 

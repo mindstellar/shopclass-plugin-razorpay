@@ -79,7 +79,8 @@ if (!function_exists('osc_add_flash_error_message')) {
 }
 
 $GLOBALS['mails'] = array();
-if (!function_exists('osc_mail_admin')) {
+// RAZORPAY_TEST_OLD_CORE leaves it out, as on a core without it.
+if (!function_exists('osc_mail_admin') && getenv('RAZORPAY_TEST_OLD_CORE') === false) {
     function osc_mail_admin(string $subject, array $lines): bool
     {
         $GLOBALS['mails'][] = array($subject, $lines);
