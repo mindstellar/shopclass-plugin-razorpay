@@ -30,4 +30,11 @@ foreach (array('pay_../../account', 'pay_x?y=1', 'pay_', 'order_Abc', 'javascrip
 }
 pin('no request reached Razorpay', array(), $http->requests);
 
+harness_section('shipped and delivered orders');
+
+$hasSettled = defined('mindstellar\\billing\\Order::SETTLED');
+foreach (array('shipped', 'delivered') as $st) {
+    pin('a ' . $st . ' order ' . ($hasSettled ? 'keeps its link' : 'has none on a core without SETTLED'), $hasSettled ? 'https://dashboard.razorpay.com/app/payments/pay_Abc123' : null, $gateway->dashboardUrl($orders->add(499_000_000, 'INR', 'pay_Abc123', $st)));
+}
+
 exit(harness_result());

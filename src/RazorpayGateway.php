@@ -336,7 +336,8 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
         if (!preg_match('/^pay_[A-Za-z0-9]{1,40}$/', $ref)) {
             return null;
         }
-        if (!in_array($order->getStatus(), array(Order::STATUS_PAID, Order::STATUS_REFUNDED), true)) {
+        $settled = defined('mindstellar\\billing\\Order::SETTLED') ? Order::SETTLED : array(Order::STATUS_PAID);
+        if (!in_array($order->getStatus(), array_merge($settled, array(Order::STATUS_REFUNDED)), true)) {
             return null;
         }
 
@@ -560,6 +561,20 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
     }
 
     /**
+     * Whether the order's status counts as paid (paid, shipped or delivered).
+     *
+     * @param Order $order
+     *
+     * @return bool
+     */
+    private function isSettled(Order $order): bool
+    {
+        return defined('mindstellar\\billing\\Order::SETTLED')
+            ? in_array($order->getStatus(), Order::SETTLED, true)
+            : $order->getStatus() === Order::STATUS_PAID;
+    }
+
+    /**
      * Why a captured payment will not be credited to its order, or null when it will be (or already was).
      *
      * @param Order               $order
@@ -576,7 +591,7 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
         if ($order->isPending() || $ref === (string) $payment['id']) {
             return null;
         }
-        if ($order->getStatus() === Order::STATUS_PAID && $ref === (string) ($payment['order_id'] ?? '')) {
+        if ($this->isSettled($order) && $ref === (string) ($payment['order_id'] ?? '')) {
             return null;
         }
 

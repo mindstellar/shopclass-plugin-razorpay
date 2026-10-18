@@ -102,4 +102,18 @@ pin('by mail', $mailCount + 1, count($GLOBALS['mails']));
 $GLOBALS['kvDown'] = false;
 pin('the flag is kept for 90 days', array('notified', 7776000), $GLOBALS['kv']['razorpay/stranded:pay_Abc'] ?? null);
 
+harness_section('shipped and delivered orders');
+
+if (defined('mindstellar\\billing\\Order::SETTLED')) {
+    $GLOBALS['alerts'] = array();
+    foreach (array('shipped', 'delivered') as $st) {
+        $o = $add($st);
+        $orders->set($o->getId(), $st, 'pay_Test' . $o->getId());
+        $fetch($orders->find($o->getId()));
+        $o2 = $add($st, 'order_Test');
+        $fetch($o2);
+    }
+    pin('a late webhook for a shipped or delivered order is not stranded', array(), $GLOBALS['alerts']);
+}
+
 exit(harness_result());

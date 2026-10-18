@@ -171,7 +171,7 @@ final class Plugin
 
         $options = $order->isPending() ? $gateway->payOptions($order, $orders->buyerEmail($userId)) : null;
         if ($options === null) {
-            self::flashOutcome($order->getId(), $order->getStatus(), $order->getStatus());
+            self::flashOutcome($order->getId(), $order->getStatus(), $order->getStatus(), method_exists($order, 'isGoods') && $order->isGoods());
 
             return null;
         }
@@ -265,7 +265,7 @@ final class Plugin
 
         $now   = $orders->find($order->getId());
         $after = $now === null ? '' : $now->getStatus();
-        self::flashOutcome($order->getId(), $before, $after);
+        self::flashOutcome($order->getId(), $before, $after, method_exists($order, 'isGoods') && $order->isGoods());
 
         return $after;
     }
@@ -276,15 +276,19 @@ final class Plugin
      * @param int    $orderId
      * @param string $before Status before the page ran
      * @param string $after  Status now
+     * @param bool   $goods  The order is for goods, not credits
      *
      * @return void
      */
-    public static function flashOutcome(int $orderId, string $before, string $after): void
+    public static function flashOutcome(int $orderId, string $before, string $after, bool $goods = false): void
     {
-        if ($after === Order::STATUS_PAID) {
-            osc_add_flash_ok_message($before === Order::STATUS_PAID
+        $settled = defined('mindstellar\\billing\\Order::SETTLED') ? Order::SETTLED : array(Order::STATUS_PAID);
+        if (in_array($after, $settled, true)) {
+            osc_add_flash_ok_message(in_array($before, $settled, true)
                 ? sprintf(__('Order #%d is paid.', 'razorpay'), $orderId)
-                : sprintf(__('Payment for order #%d received. Credits added.', 'razorpay'), $orderId));
+                : ($goods
+                    ? sprintf(__('Payment received for order #%d.', 'razorpay'), $orderId)
+                    : sprintf(__('Payment for order #%d received. Credits added.', 'razorpay'), $orderId)));
         } elseif ($after === Order::STATUS_PENDING) {
             osc_add_flash_info_message(sprintf(__('Payment for order #%d is processing. Credits are added once Razorpay confirms it.', 'razorpay'), $orderId));
         } else {
