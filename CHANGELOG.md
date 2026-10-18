@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+### Changed
+- A shop order shows what was bought in Razorpay Checkout, not a credits count.
+
 ## 0.1.0
 
 ### New

@@ -126,6 +126,8 @@ pin('everything Checkout needs, and no secret', array(
     'notes'       => array('shopclass_order' => '1'),
     'prefill'     => array('email' => 'buyer@example.test'),
 ), $options);
+$goods = $orders->add(499_000_000, 'INR', 'order_TestGoods', Order::STATUS_PENDING, 'razorpay', '2026-01-01 00:00:00', array('_kind' => 'goods', '_label' => 'Linen tee × 2 and 1 more'));
+pin('a goods order is described by its label, on a core that has one', method_exists($goods, 'isGoods') ? 'Linen tee × 2 and 1 more' : '100 credits', $gateway->payOptions($goods)['description'] ?? null);
 check('no e-mail, no prefill', !isset($gateway->payOptions($orders->find(1))['prefill']));
 pin('a paid order has nothing to pay', null, $gateway->payOptions($orders->add(499_000_000, 'INR', 'pay_X', 'paid')));
 pin('nor an order without a Razorpay order', null, $gateway->payOptions($orders->add()));

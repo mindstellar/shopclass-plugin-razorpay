@@ -7,8 +7,9 @@
 
 /**
  * The gateway against core's real billing layer and a scratch database, with Razorpay faked:
- * a webhook credits once, a replay credits nothing, a wrong amount is refused, the return
- * path and the daily check settle, and a refund followed by its webhook takes credits once.
+ * a webhook credits once, a replay credits nothing, a wrong amount is refused, a goods order
+ * settles with no credits, the return path and the daily check settle, and a refund followed
+ * by its webhook takes credits once.
  *
  * Needs core's scratch MySQL (see core's tests/lib/scratchdb.php). Usage:
  *   SHOPCLASS_CORE=/path/to/core php tests/integration/billing.php
@@ -195,6 +196,21 @@ pin('so is a forged signature', Order::STATUS_PENDING, $status($short));
 $webhook(event('payment.failed', payment($short, array('status' => 'failed'))));
 pin('a failed attempt leaves the order open for another try', Order::STATUS_PENDING, $status($short));
 pin('none credited anything', 100, Wallet::balance($buyer));
+
+harness_section('a goods order');
+
+$goods = OrderStore::create($buyer, RazorpayGateway::ID, 499_000_000, 'INR', 0, array('_kind' => 'goods', '_label' => 'Linen tee × 2 and 1 more'));
+$http->on('POST', 'orders', 200, $remote($goods));
+$gateway->createCheckout($goods);
+pin('Checkout describes it by its label, on a core that has one', method_exists($goods, 'isGoods') ? 'Linen tee × 2 and 1 more' : '0 credits', $gateway->payOptions(OrderStore::find($goods->getId()))['description'] ?? null);
+$balance = Wallet::balance($buyer);
+$webhook(event('payment.captured', payment($goods, array('amount' => 100))), 'evt_goods_short');
+pin('a payment for another amount is refused by core', Order::STATUS_PENDING, $status($goods));
+$webhook(event('payment.captured', payment($goods)), 'evt_goods');
+pin('the right amount settles it', Order::STATUS_PAID, $status($goods));
+pin('with no credits', array($balance, 0), array(Wallet::balance($buyer), $ledger($goods)));
+$webhook(event('payment.captured', payment($goods)), 'evt_goods_2');
+pin('a replay changes nothing', array(Order::STATUS_PAID, $balance), array($status($goods), Wallet::balance($buyer)));
 
 harness_section('return page');
 

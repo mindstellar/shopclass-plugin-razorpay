@@ -213,7 +213,7 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
             'amount'      => $minor,
             'currency'    => strtoupper($order->getCurrency()),
             'name'        => $this->config->siteName,
-            'description' => sprintf(__('%d credits', 'razorpay'), $order->getCredits()),
+            'description' => self::describe($order),
             'order_id'    => $ref,
             'notes'       => array('shopclass_order' => (string) $order->getId()),
         );
@@ -222,6 +222,22 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
         }
 
         return $options;
+    }
+
+    /**
+     * What the buyer sees they are paying for: a goods order's label on a core that has one, else the credits.
+     *
+     * @param Order $order
+     *
+     * @return string
+     */
+    private static function describe(Order $order): string
+    {
+        if (method_exists($order, 'isGoods') && $order->isGoods()) {
+            return mb_substr($order->getLabel(), 0, 255);
+        }
+
+        return sprintf(__('%d credits', 'razorpay'), $order->getCredits());
     }
 
     /**
