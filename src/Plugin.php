@@ -207,7 +207,7 @@ final class Plugin
             osc_redirect_to(osc_user_login_url());
         }
 
-        self::settleReturn(
+        $status = self::settleReturn(
             self::register(),
             new CoreOrderStore(),
             Params::getParamInt('order'),
@@ -216,7 +216,11 @@ final class Plugin
             Params::getParamString('razorpay_payment_id'),
             Params::getParamString('razorpay_signature')
         );
-        osc_redirect_to(osc_billing_enabled() ? osc_billing_orders_url() : osc_base_url());
+        if (!osc_billing_enabled()) {
+            osc_redirect_to(osc_base_url());
+        }
+        $orderId = Params::getParamInt('order');
+        osc_redirect_to($status !== '' && function_exists('osc_billing_order_return_url') ? osc_billing_order_return_url($orderId) : osc_billing_orders_url());
     }
 
     /**
