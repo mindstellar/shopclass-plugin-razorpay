@@ -1,9 +1,9 @@
 # Razorpay Payment
 
-Take UPI, card, netbanking and wallet payments for ShopClass credit packages through
+Take UPI, card, netbanking and wallet payments for ShopClass shop orders and credit packages through
 [Razorpay Standard Checkout](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/).
 Buyers pay in Razorpay's own window, so no card data reaches your site. Core adds the
-credits once the payment is confirmed.
+credits or marks the shop order paid once the payment is confirmed.
 
 ## Requirements
 
@@ -14,9 +14,13 @@ credits once the payment is confirmed.
 Works on plain shared hosting: no shell, worker or Redis is needed. On a VPS with core's job
 worker, retries just run sooner.
 
-## Setup
+## Install
 
-1. Install and activate the plugin, then open **Plugins → Razorpay Payment**.
+From the admin: **Plugins → Manage plugins → Browse**, find *Razorpay Payment*, then **Install** and activate it. Or upload the zip under **Plugins → Add new**.
+
+## Settings
+
+1. Open **Plugins → Razorpay Payment**.
 2. In the Razorpay dashboard, switch to test mode, open **Accounts & Settings → API keys**
    and make a key. Copy the key id (`rzp_test_…`) and the key secret into the test fields.
 3. Open **Accounts & Settings → Webhooks**, add a webhook with the URL the settings page
@@ -92,6 +96,14 @@ the site.
 
 Each site only acts on payments for Razorpay orders it created, so several sites can share
 an account. Give each site its own webhook.
+
+## What it stores
+
+The keys and mode are preferences in the `razorpay` section. An order keeps the Razorpay references it needs in its meta. Retries and the daily check are jobs in core's job queue. No table of its own.
+
+## Hooks
+
+Registers the gateway on `register_payment_gateways`, adds the pay and return pages, and listens to `register_jobs`, `cron_daily` and `job_gave_up`. It fires no hooks.
 
 ## Uninstall
 
