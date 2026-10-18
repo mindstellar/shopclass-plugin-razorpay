@@ -10,7 +10,7 @@
  */
 
 require __DIR__ . '/lib/bootstrap.php';
-foreach (array('base/Registry.php', 'currency/CurrencyCode.php', 'billing/PaymentGatewayRegistry.php', 'job/Job.php') as $file) {
+foreach (array('container/ContainerInterface.php', 'container/NotFoundException.php', 'container/Container.php', 'base/Registry.php', 'currency/CurrencyCode.php', 'billing/PaymentGatewayRegistry.php', 'job/Job.php') as $file) {
     require_once core_path() . '/oc-includes/osclass/classes/' . $file;
 }
 
