@@ -103,6 +103,12 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
         return $this->config->name;
     }
 
+    /** Where Settings > Billing links to set this method up. */
+    public function settingsUrl(): ?string
+    {
+        return osc_settings_page_url(Plugin::PAGE);
+    }
+
     /**
      * The currencies listed in settings, or the billing currency when none are.
      *

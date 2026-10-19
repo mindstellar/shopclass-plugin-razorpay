@@ -20,7 +20,7 @@ From the admin: **Plugins → Manage plugins → Browse**, find *Razorpay Paymen
 
 ## Settings
 
-1. Open **Plugins → Razorpay Payment**.
+1. Open **Settings → Billing → Payment methods** and choose **Set up** next to Razorpay Payment.
 2. In the Razorpay dashboard, switch to test mode, open **Accounts & Settings → API keys**
    and make a key. Copy the key id (`rzp_test_…`) and the key secret into the test fields.
 3. Open **Accounts & Settings → Webhooks**, add a webhook with the URL the settings page
