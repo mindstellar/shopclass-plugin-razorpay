@@ -3,6 +3,7 @@
 ## 0.1.5
 
 ### Changed
+- A refund Razorpay is still processing shows as sent, not as an error, on Shopclass 7.1.
 - A refused API call shows Razorpay's code, reason, source, step and field next to its message, and the whole error goes to the PHP error log.
 - On Shopclass 7.0 Razorpay is offered for credit packages only when it takes the billing currency.
 - Razorpay is offered for shop orders in INR whatever the billing currency; an empty Currencies setting now means INR and the billing currency.
