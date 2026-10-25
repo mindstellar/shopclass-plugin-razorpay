@@ -140,7 +140,12 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
      */
     public function isConfigured(): bool
     {
-        if (!$this->hasKeys() || $this->getSupportedCurrencies() === array()) {
+        $currencies = $this->getSupportedCurrencies();
+        if (!$this->hasKeys() || $currencies === array()) {
+            return false;
+        }
+        // Shopclass 7.1 lists credit-package gateways by the billing currency (osc_billing_gateways()); 7.0 does not.
+        if (!function_exists('osc_billing_gateways') && !in_array($this->config->billingCurrency, $currencies, true)) {
             return false;
         }
 

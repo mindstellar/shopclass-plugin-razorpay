@@ -3,6 +3,7 @@
 ## 0.1.5
 
 ### Changed
+- On Shopclass 7.0 Razorpay is offered for credit packages only when it takes the billing currency.
 - Razorpay is offered for shop orders in INR whatever the billing currency; an empty Currencies setting now means INR and the billing currency.
 - On Shopclass 7.0 the settings page stays reachable from the plugin list, since 7.0 has no Billing menu for plugin pages.
 - On Shopclass 7.0 the daily check of pending orders is skipped instead of failing.

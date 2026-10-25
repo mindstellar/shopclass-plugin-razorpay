@@ -18,6 +18,14 @@ use mindstellar\razorpay\Config;
 use mindstellar\razorpay\RazorpayGateway;
 use mindstellar\razorpay\Signature;
 
+// Core 7.1 lists credit-package gateways by the billing currency; the 7.0 fallback is tested in checkout-70.php.
+if (!function_exists('osc_billing_gateways')) {
+    function osc_billing_gateways(): array
+    {
+        return array();
+    }
+}
+
 harness_section('isConfigured');
 
 $http   = new FakeHttp();
