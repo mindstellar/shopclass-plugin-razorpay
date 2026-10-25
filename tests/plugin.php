@@ -10,7 +10,13 @@
  */
 
 require __DIR__ . '/lib/bootstrap.php';
-foreach (array('container/ContainerInterface.php', 'container/NotFoundException.php', 'container/Container.php', 'base/Registry.php', 'currency/CurrencyCode.php', 'billing/PaymentGatewayRegistry.php', 'job/Job.php') as $file) {
+// Core 7.0 has no container classes; its Registry does not need them.
+foreach (array('container/ContainerInterface.php', 'container/NotFoundException.php', 'container/Container.php') as $file) {
+    if (is_file(core_path() . '/oc-includes/osclass/classes/' . $file)) {
+        require_once core_path() . '/oc-includes/osclass/classes/' . $file;
+    }
+}
+foreach (array('base/Registry.php', 'currency/CurrencyCode.php', 'billing/PaymentGatewayRegistry.php', 'job/Job.php') as $file) {
     require_once core_path() . '/oc-includes/osclass/classes/' . $file;
 }
 
