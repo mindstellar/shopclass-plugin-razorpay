@@ -139,13 +139,15 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
     }
 
     /**
-     * Whether the active mode has its key id, key secret and webhook secret.
+     * Whether the active mode has its key id and key secret, and in live mode a webhook secret too.
+     * Test mode works without one: the buyer's return settles the payment.
      *
      * @return bool
      */
     public function hasKeys(): bool
     {
-        return $this->config->keyId !== '' && $this->config->keySecret !== '' && $this->config->webhookSecret !== '';
+        return $this->config->keyId !== '' && $this->config->keySecret !== ''
+            && ($this->config->webhookSecret !== '' || !$this->config->live());
     }
 
     /**
@@ -436,6 +438,9 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
      */
     private function webhook(): CallbackResult
     {
+        if ($this->config->webhookSecret === '') {
+            return CallbackResult::ignored('no webhook secret is set');
+        }
         [$body, $header, $eventId] = ($this->input)() + array('', '', '');
         if (!Signature::webhook((string) $body, (string) $header, $this->config->webhookSecret)) {
             return CallbackResult::ignored('bad signature');

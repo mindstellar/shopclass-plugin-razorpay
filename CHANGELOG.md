@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5
+
+### Changed
+- In test mode Razorpay is offered with only the key id and secret; live mode still needs the webhook secret.
+
 ## 0.1.4
 
 ### Changed

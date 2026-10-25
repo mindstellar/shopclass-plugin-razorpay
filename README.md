@@ -42,8 +42,10 @@ From the admin: **Plugins → Manage plugins → Browse**, find *Razorpay Paymen
 5. Turn on automatic capture under **Accounts & Settings → Payment capture**. If a payment
    still arrives only authorized, the plugin captures it when the amount matches the order.
 
-Razorpay shows at checkout once the key id, key secret and webhook secret for the active
-mode are set and the site's billing currency is one Razorpay takes.
+Razorpay shows at checkout once the key id and key secret for the active mode are set and
+the site's billing currency is one Razorpay takes. Live mode also needs the webhook secret.
+In test mode it is optional, so a local site Razorpay cannot reach still works: the buyer's
+return settles the payment.
 
 The **Currencies** setting lists the codes Razorpay is offered for, such as `INR, USD`.
 Leave it empty to use the billing currency. A list that leaves out the billing currency

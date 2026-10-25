@@ -187,7 +187,7 @@ check('even when the queue is down too, Razorpay is told to retry', $noQueue->ha
 
 harness_section('not configured');
 
-$bare = fake_gateway($http, $orders, array('webhook' => ''));
+$bare = fake_gateway($http, $orders, array('mode' => 'live', 'webhook' => ''));
 deliver(event('payment.captured', payment($order)));
 $r = $bare->handleCallback(array());
 pin('without a webhook secret nothing is settled', CallbackResult::OUTCOME_IGNORED, $r->getOutcome());
