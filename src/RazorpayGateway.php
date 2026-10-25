@@ -123,18 +123,24 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
             return $this->config->currencies;
         }
 
-        return in_array($this->config->billingCurrency, Money::SUPPORTED, true) ? array($this->config->billingCurrency) : array();
+        // Empty: INR, which every Razorpay account takes, and the billing currency for credit packages.
+        $codes = array('INR');
+        if (in_array($this->config->billingCurrency, Money::SUPPORTED, true)) {
+            $codes[] = $this->config->billingCurrency;
+        }
+
+        return array_values(array_unique($codes));
     }
 
     /**
-     * Offered at checkout once the active mode has its keys and Razorpay takes the billing currency.
-     * In test mode only a signed-in admin sees it, so a live site cannot hand out free credits.
+     * Offered at checkout once the active mode has its keys; core offers it only for an order in one
+     * of getSupportedCurrencies(). In test mode only a signed-in admin sees it, so a live site cannot hand out free credits.
      *
      * @return bool
      */
     public function isConfigured(): bool
     {
-        if (!$this->hasKeys() || !in_array($this->config->billingCurrency, $this->getSupportedCurrencies(), true)) {
+        if (!$this->hasKeys() || $this->getSupportedCurrencies() === array()) {
             return false;
         }
 

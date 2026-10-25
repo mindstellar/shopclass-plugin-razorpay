@@ -131,7 +131,7 @@ return array(
                     'name'        => 'currencies',
                     'label'       => __('Currencies', 'razorpay'),
                     'placeholder' => 'INR',
-                    'help'        => __('Comma-separated codes. Leave empty to use the billing currency. Any currency but INR needs international payments turned on in your Razorpay account.', 'razorpay'),
+                    'help'        => __('Comma-separated codes. Leave empty for INR and the billing currency. Any currency but INR needs international payments turned on in your Razorpay account.', 'razorpay'),
                     'sanitize'    => static function ($value) {
                         $codes = array_filter(array_map('trim', explode(',', strtoupper((string) $value))));
 

@@ -27,16 +27,18 @@ check('not without the key id', !fake_gateway($http, $orders, array('key' => '')
 check('not without the key secret', !fake_gateway($http, $orders, array('secret' => ''))->isConfigured());
 check('test mode is offered without a webhook secret', fake_gateway($http, $orders, array('webhook' => ''))->isConfigured());
 check('live is not offered without a webhook secret', !fake_gateway($http, $orders, array('mode' => 'live', 'webhook' => ''))->isConfigured());
-check('not when the billing currency is not allowed', !fake_gateway($http, $orders, array('currencies' => array('USD')))->isConfigured());
+check('offered when its listed currencies leave out the billing currency', fake_gateway($http, $orders, array('currencies' => array('USD')))->isConfigured());
+pin('and only for the listed ones', array('USD'), fake_gateway($http, $orders, array('currencies' => array('USD')))->getSupportedCurrencies());
 check('yes when it is', fake_gateway($http, $orders, array('currencies' => array('USD', 'INR')))->isConfigured());
 check('in test mode, not offered to a buyer who is not an admin', !fake_gateway($http, $orders, array('admin' => false))->isConfigured());
 check('but webhooks and lookups still work for them', fake_gateway($http, $orders, array('admin' => false))->hasKeys());
 $noCheck = new RazorpayGateway(new Config('test', KEY_ID, KEY_SECRET, WHSEC, 'Razorpay', array(), 'INR', 'Shop', static fn (int $id): string => '', '', null), $http, $orders);
 check('in test mode with no way to tell an admin, not offered', !$noCheck->isConfigured());
 check('in live mode, offered to everyone', fake_gateway($http, $orders, array('mode' => 'live', 'admin' => false))->isConfigured());
-pin('the billing currency when none are listed', array('INR'), fake_gateway($http, $orders)->getSupportedCurrencies());
-pin('nothing when Razorpay does not take the billing currency', array(), fake_gateway($http, $orders, array('billing' => 'XYZ'))->getSupportedCurrencies());
-check('which leaves it unconfigured', !fake_gateway($http, $orders, array('billing' => 'XYZ'))->isConfigured());
+pin('INR when none are listed and the billing currency is INR', array('INR'), fake_gateway($http, $orders)->getSupportedCurrencies());
+pin('INR and the billing currency when none are listed', array('INR', 'USD'), fake_gateway($http, $orders, array('billing' => 'USD'))->getSupportedCurrencies());
+pin('INR alone when Razorpay does not take the billing currency', array('INR'), fake_gateway($http, $orders, array('billing' => 'XYZ'))->getSupportedCurrencies());
+check('so it is still offered for INR orders', fake_gateway($http, $orders, array('billing' => 'XYZ'))->isConfigured());
 pin('a list from settings keeps only codes Razorpay takes', array('INR', 'USD'), Config::parseCurrencies('inr, usd, nope, INR'));
 
 harness_section('createCheckout');
