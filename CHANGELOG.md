@@ -3,6 +3,7 @@
 ## 0.1.5
 
 ### Changed
+- On Shopclass 7.0 the daily check of pending orders is skipped instead of failing.
 - In test mode Razorpay is offered with only the key id and secret; live mode still needs the webhook secret.
 - The settings page moves under Billing.
 - Test mode also shows at checkout for a signed-in admin on themes that pay through the API (Shopclass 7.1).

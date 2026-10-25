@@ -48,6 +48,11 @@ final class CoreOrderStore implements OrderStore
 
     public function stalePending(int $seconds, int $limit): array
     {
+        // Core 7.0 has no pendingBefore(); the daily check then has nothing to look at.
+        if (!method_exists(Orders::class, 'pendingBefore')) {
+            return array();
+        }
+
         return Orders::pendingBefore(RazorpayGateway::ID, date('Y-m-d H:i:s', time() - $seconds + 1), $limit, 'order_');
     }
 
