@@ -36,6 +36,9 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
     /** Order meta key: whether the order was opened with the live keys. */
     public const META_LIVE = 'razorpay_live';
 
+    /** Order meta key set once a payment for an order already closed has been refunded. */
+    public const META_CLOSED_REFUND = 'razorpay_closed_refund';
+
     /** Request key holding a Verified object. */
     public const TRUSTED = 'razorpay_verified';
 
@@ -551,6 +554,9 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
         }
 
         $status = (string) ($payment['status'] ?? '');
+        if ($status === 'captured' && in_array($order->getStatus(), array(Order::STATUS_FAILED, Order::STATUS_CANCELLED), true)) {
+            return $this->refundClosed($order, $id);
+        }
         if ($status === 'captured') {
             $stranded = $this->strandedReason($order, $payment);
             if ($stranded !== null) {
@@ -569,6 +575,67 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
         }
 
         return CallbackResult::ignored('not paid yet');
+    }
+
+    /**
+     * Give back money Razorpay took for an order core had already closed. Done once per order; a
+     * refund Razorpay could not be asked for throws, so it is retried. A refused one goes to the admin.
+     *
+     * @param Order  $order
+     * @param string $paymentId
+     *
+     * @return CallbackResult
+     * @throws HttpException when Razorpay cannot be reached or fails
+     */
+    private function refundClosed(Order $order, string $paymentId): CallbackResult
+    {
+        if ($order->meta(self::META_CLOSED_REFUND) !== null) {
+            return CallbackResult::ignored('payment for a closed order was already handled');
+        }
+        try {
+            // The receipt makes Razorpay refuse a second refund for the same order.
+            $refund = $this->api->refund($paymentId, array(
+                'receipt' => 'closed-order-' . $order->getId(),
+                'notes'   => array('shopclass_order' => (string) $order->getId()),
+            ));
+        } catch (HttpException $e) {
+            $code = $e->getCode();
+            if ($code < 400 || $code >= 500 || $code === 401) {
+                throw $e;
+            }
+            $this->rememberClosed($order->getId(), 'refused');
+            ($this->alert)($order->getId(), $paymentId, 'the order is ' . $order->getStatus() . ' and Razorpay refused the refund: ' . self::short($e->getMessage()));
+
+            return CallbackResult::ignored('payment for a closed order; refund refused');
+        }
+
+        $refundId = (string) ($refund['id'] ?? '');
+        if (!str_starts_with($refundId, 'rfnd_')) {
+            throw new HttpException('Razorpay did not refund payment ' . $paymentId);
+        }
+        $this->rememberClosed($order->getId(), $refundId);
+        error_log('Razorpay: payment ' . $paymentId . ' for order #' . $order->getId() . ' arrived after the order was closed and was refunded.');
+
+        return CallbackResult::ignored('payment for a closed order; refunded');
+    }
+
+    /**
+     * Note on the order that its late payment was handled.
+     *
+     * @param int    $orderId
+     * @param string $value
+     *
+     * @return void
+     */
+    private function rememberClosed(int $orderId, string $value): void
+    {
+        try {
+            if (!$this->orders->setMeta($orderId, self::META_CLOSED_REFUND, $value)) {
+                error_log('Razorpay: could not store the refund on order #' . $orderId);
+            }
+        } catch (Throwable $e) {
+            error_log('Razorpay: could not store the refund on order #' . $orderId . ': ' . $e->getMessage());
+        }
     }
 
     /**

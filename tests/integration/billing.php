@@ -283,9 +283,10 @@ harness_section('a payment that cannot be credited');
 
 $alerts  = array();
 $balance = Wallet::balance($buyer);
+$http->on('POST', 'payments/pay_Test' . $late->getId() . '/refund', 200, array('id' => 'rfnd_Late', 'status' => 'processed'));
 $webhook(event('payment.captured', payment($late)), 'evt_late');
 pin('a late payment for an order closed unpaid credits nothing', array(Order::STATUS_FAILED, $balance), array($status($late), Wallet::balance($buyer)));
-pin('and the admin is told', array(array($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed')), $alerts);
+pin('and is refunded at Razorpay, with nothing for the admin to do', array('rfnd_Late', array()), array(OrderStore::find($late->getId())->meta(RazorpayGateway::META_CLOSED_REFUND), $alerts));
 check('the notice goes out once per payment', Plugin::strandedPayment($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed'));
 check('not twice', !Plugin::strandedPayment($late->getId(), 'pay_Test' . $late->getId(), 'the order is failed'));
 pin('one admin mail for that payment', 1, count(array_filter($GLOBALS['mails'], static fn (array $m): bool => str_contains(implode(' ', $m[1]), 'pay_Test' . $late->getId()))));

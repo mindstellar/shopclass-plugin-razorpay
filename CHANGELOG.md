@@ -8,6 +8,7 @@
 - In test mode Razorpay is offered with only the key id and secret; live mode still needs the webhook secret.
 - The settings page moves under Billing.
 - Test mode also shows at checkout for a signed-in admin on themes that pay through the API (Shopclass 7.1).
+- A payment for an order already closed (failed or cancelled) is refunded at Razorpay instead of only e-mailing the admin.
 
 ## 0.1.4
 

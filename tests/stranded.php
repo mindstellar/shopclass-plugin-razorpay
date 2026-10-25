@@ -14,6 +14,7 @@ require __DIR__ . '/lib/bootstrap.php';
 use mindstellar\billing\CallbackResult;
 use mindstellar\billing\Order;
 use mindstellar\razorpay\Plugin;
+use mindstellar\razorpay\RazorpayGateway;
 
 $GLOBALS['kv'] = array();
 $GLOBALS['kvDown'] = false;
@@ -48,17 +49,38 @@ $add = static function (string $status = Order::STATUS_PENDING, string $prefix =
     return $orders->find($order->getId());
 };
 
-harness_section('when the admin is told');
+harness_section('a payment for a closed order is refunded');
 
 $failed = $add(Order::STATUS_FAILED);
-$r      = $fetch($failed);
-pin('a captured payment for an order closed as failed', array(array(1, 'pay_Test1', 'the order is failed')), $GLOBALS['alerts']);
-pin('the result still goes to core, which refuses it', CallbackResult::OUTCOME_PAID, $r->getOutcome());
+$http->on('POST', 'payments/pay_Test1/refund', 200, array('id' => 'rfnd_Late1', 'status' => 'processed'));
+$r = $fetch($failed);
+pin('a captured payment for an order closed as failed is not reported as paid', array(CallbackResult::OUTCOME_IGNORED, 'payment for a closed order; refunded'), array($r->getOutcome(), $r->getMessage()));
+pin('it is refunded at Razorpay at once, keyed on the order', array('POST payments/pay_Test1/refund', 'closed-order-1'), array($http->lastCall(), $http->lastBody()['receipt'] ?? null));
+pin('the refund is noted on the order', 'rfnd_Late1', $orders->find(1)->meta(RazorpayGateway::META_CLOSED_REFUND));
+pin('no admin notice is needed', array(), $GLOBALS['alerts']);
+$calls = count($http->requests);
+pin('a replay asks for no second refund', array('payment for a closed order was already handled', $calls + 1), array($fetch($orders->find(1))->getMessage(), count($http->requests)));
 
-$GLOBALS['alerts'] = array();
 $cancelled = $add(Order::STATUS_CANCELLED);
-$fetch($cancelled);
-pin('a cancelled order too', 'the order is cancelled', $GLOBALS['alerts'][0][2] ?? null);
+$http->on('POST', 'payments/pay_Test2/refund', 200, array('id' => 'rfnd_Late2', 'status' => 'pending'));
+pin('a cancelled order too', 'payment for a closed order; refunded', $fetch($cancelled)->getMessage());
+
+$refused = $add(Order::STATUS_CANCELLED);
+$http->on('POST', 'payments/pay_Test3/refund', 400, array('error' => array('code' => 'BAD_REQUEST_ERROR', 'description' => 'Refund not allowed')));
+pin('a refund Razorpay refuses goes to the admin', array('payment for a closed order; refund refused', array(array(3, 'pay_Test3', 'the order is cancelled and Razorpay refused the refund: Razorpay answered 400: Refund not allowed'))), array($fetch($refused)->getMessage(), $GLOBALS['alerts']));
+
+$down = $add(Order::STATUS_CANCELLED);
+$http->down('POST', 'payments/pay_Test4/refund');
+try {
+    $fetch($down);
+    $thrown = 'nothing';
+} catch (Throwable $e) {
+    $thrown = $e->getMessage();
+}
+pin('a refund that could not be asked for throws, so it is retried', 'Could not reach api.razorpay.com: timeout', $thrown);
+pin('and nothing is noted', null, $orders->find(4)->meta(RazorpayGateway::META_CLOSED_REFUND));
+
+harness_section('when the admin is told');
 
 $GLOBALS['alerts'] = array();
 $pendingShort = $add();
