@@ -40,7 +40,7 @@ pin('a failed refund changes nothing, and says why', array(CallbackResult::OUTCO
 
 $http->on('POST', 'payments/pay_Test1/refund', 400, array('error' => array('code' => 'BAD_REQUEST_ERROR', 'description' => 'The payment has been fully refunded already')));
 $r = $gateway->refund($order);
-pin('a refusal is shown to the admin with Razorpay\'s reason', array(CallbackResult::OUTCOME_IGNORED, 'Razorpay answered 400: The payment has been fully refunded already'), array($r->getOutcome(), $r->getMessage()));
+pin('a refusal is shown to the admin with Razorpay\'s reason', array(CallbackResult::OUTCOME_IGNORED, 'Razorpay answered 400: The payment has been fully refunded already (BAD_REQUEST_ERROR)'), array($r->getOutcome(), $r->getMessage()));
 
 $http->down('POST', 'payments/pay_Test1/refund');
 pin('Razorpay down is ignored with a reason', 'Could not reach api.razorpay.com: timeout', $gateway->refund($order)->getMessage());
@@ -61,5 +61,13 @@ $none  = $orders->add(499_000_000, 'INR', null, 'paid');
 $count = count($http->requests);
 pin('an order with no Razorpay payment is refused', 'no Razorpay payment found for this order', $gateway->refund($none)->getMessage());
 pin('without calling Razorpay', $count, count($http->requests));
+
+harness_section('the full error reaches the admin');
+pin('code, reason, source, step and field', 'BAD_REQUEST_ERROR, reason input_validation_failed, source business, step payment_initiation, field amount', \mindstellar\razorpay\RazorpayApi::errorDetail(array('code' => 'BAD_REQUEST_ERROR', 'description' => 'x', 'reason' => 'input_validation_failed', 'source' => 'business', 'step' => 'payment_initiation', 'field' => 'amount')));
+pin('"NA" and empty parts are left out', 'BAD_REQUEST_ERROR', \mindstellar\razorpay\RazorpayApi::errorDetail(array('code' => 'BAD_REQUEST_ERROR', 'reason' => 'NA', 'source' => 'NA', 'step' => '', 'metadata' => array())));
+pin('nothing to add', '', \mindstellar\razorpay\RazorpayApi::errorDetail(array()));
+$http->on('POST', 'payments/pay_Test9/refund', 400, array('error' => array('code' => 'BAD_REQUEST_ERROR', 'description' => 'invalid request sent', 'reason' => 'refund_not_allowed', 'step' => 'refund_initiation')));
+$detailed = $orders->add(499_000_000, 'INR', 'pay_Test9', 'paid');
+pin('the admin sees the reason and step too', 'Razorpay answered 400: invalid request sent (BAD_REQUEST_ERROR, reason refund_not_allowed, step refund_initiation)', $gateway->refund($detailed)->getMessage());
 
 exit(harness_result());

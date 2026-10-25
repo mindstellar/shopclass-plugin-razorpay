@@ -133,13 +133,41 @@ final class RazorpayApi
         $decoded  = json_decode($response['body'], true);
 
         if ($response['status'] < 200 || $response['status'] >= 300) {
-            $message = is_array($decoded) && is_array($decoded['error'] ?? null) ? (string) ($decoded['error']['description'] ?? '') : '';
-            throw new HttpException('Razorpay answered ' . $response['status'] . ($message !== '' ? ': ' . $message : ''), $response['status']);
+            $error   = is_array($decoded) && is_array($decoded['error'] ?? null) ? $decoded['error'] : array();
+            $message = (string) ($error['description'] ?? '');
+            $detail  = self::errorDetail($error);
+            if ($error !== array()) {
+                error_log('Razorpay ' . $method . ' ' . $path . ' answered ' . $response['status'] . ': ' . json_encode($error, JSON_UNESCAPED_SLASHES));
+            }
+            throw new HttpException(
+                'Razorpay answered ' . $response['status'] . ($message !== '' ? ': ' . $message : '') . ($detail !== '' ? ' (' . $detail . ')' : ''),
+                $response['status']
+            );
         }
         if (!is_array($decoded)) {
             throw new HttpException('Razorpay sent a response that is not JSON');
         }
 
         return $decoded;
+    }
+
+    /**
+     * Razorpay's code, reason, source, step and field for an error, leaving out empty and "NA" parts.
+     *
+     * @param array<string,mixed> $error the "error" object of a Razorpay answer
+     *
+     * @return string e.g. "BAD_REQUEST_ERROR, reason input_validation_failed, step payment_initiation"
+     */
+    public static function errorDetail(array $error): string
+    {
+        $parts = array();
+        foreach (array('code' => '', 'reason' => 'reason ', 'source' => 'source ', 'step' => 'step ', 'field' => 'field ') as $key => $label) {
+            $value = is_scalar($error[$key] ?? null) ? trim((string) $error[$key]) : '';
+            if ($value !== '' && strtoupper($value) !== 'NA') {
+                $parts[] = $label . $value;
+            }
+        }
+
+        return implode(', ', $parts);
     }
 }

@@ -67,7 +67,7 @@ pin('a cancelled order too', 'payment for a closed order; refunded', $fetch($can
 
 $refused = $add(Order::STATUS_CANCELLED);
 $http->on('POST', 'payments/pay_Test3/refund', 400, array('error' => array('code' => 'BAD_REQUEST_ERROR', 'description' => 'Refund not allowed')));
-pin('a refund Razorpay refuses goes to the admin', array('payment for a closed order; refund refused', array(array(3, 'pay_Test3', 'the order is cancelled and Razorpay refused the refund: Razorpay answered 400: Refund not allowed'))), array($fetch($refused)->getMessage(), $GLOBALS['alerts']));
+pin('a refund Razorpay refuses goes to the admin', array('payment for a closed order; refund refused', array(array(3, 'pay_Test3', 'the order is cancelled and Razorpay refused the refund: Razorpay answered 400: Refund not allowed (BAD_REQUEST_ERROR)'))), array($fetch($refused)->getMessage(), $GLOBALS['alerts']));
 
 $down = $add(Order::STATUS_CANCELLED);
 $http->down('POST', 'payments/pay_Test4/refund');

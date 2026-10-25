@@ -240,7 +240,7 @@ try {
     $messages[] = $e->getMessage();
 }
 pin('a refusal, a server error, a bad body and no answer each throw', 4, count($messages));
-pin('with Razorpay\'s reason or the status only', array('Razorpay answered 401: Authentication failed', 'Razorpay answered 500', 'Razorpay sent a response that is not JSON', 'Could not reach api.razorpay.com: timeout'), $messages);
+pin('with Razorpay\'s reason or the status only', array('Razorpay answered 401: Authentication failed (BAD_REQUEST_ERROR)', 'Razorpay answered 500', 'Razorpay sent a response that is not JSON', 'Could not reach api.razorpay.com: timeout'), $messages);
 check('none holds the key id, the secret or the Authorization header', array_filter($messages, static fn (string $m): bool => str_contains($m, KEY_SECRET) || str_contains($m, KEY_ID) || str_contains($m, $auth) || stripos($m, 'basic') !== false) === array());
 $refund = $gateway->refund($orders->add(499_000_000, 'INR', 'pay_Test1', 'paid'));
 check('nor the reason a refund shows the admin', !str_contains($refund->getMessage(), KEY_SECRET) && !str_contains($refund->getMessage(), $auth));
