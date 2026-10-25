@@ -4,6 +4,7 @@
 
 ### Changed
 - In test mode Razorpay is offered with only the key id and secret; live mode still needs the webhook secret.
+- The settings page moves under Billing.
 
 ## 0.1.4
 

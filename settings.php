@@ -70,8 +70,9 @@ $capture = static function (): void {
 };
 
 return array(
-    'title'  => __('Razorpay Payment', 'razorpay'),
-    'menu'   => '',
+    'title'      => __('Razorpay Payment', 'razorpay'),
+    'menu'       => 'billing',
+    'menu_title' => __('Razorpay', 'razorpay'),
     'intro'  => __('Take UPI, card, netbanking and wallet payments for credit packages through Razorpay Checkout. Buyers pay in a window hosted by Razorpay, so no card data reaches this site.', 'razorpay'),
     'groups' => array(
         array(
