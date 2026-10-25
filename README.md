@@ -1,131 +1,72 @@
 # Razorpay Payment
 
-Take UPI, card, netbanking and wallet payments for ShopClass shop orders and credit packages through
-[Razorpay Standard Checkout](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/).
-Buyers pay in Razorpay's own window, so no card data reaches your site. Core adds the
-credits or marks the shop order paid once the payment is confirmed.
+Take UPI, card, netbanking and wallet payments for shop orders and credit packages through [Razorpay Standard Checkout](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/). Buyers pay in Razorpay's own window, so no card data reaches your site.
 
 ## Requirements
 
-- ShopClass 7.0.0 or later, with billing turned on
-- PHP 8.0 or later, with the curl extension
-- Cron running, for retries and the daily check of pending orders
-
-Works on plain shared hosting: no shell, worker or Redis is needed. On a VPS with core's job
-worker, retries just run sooner.
+- Shopclass 7.0.0 or later, with billing turned on
+- PHP 8.0 or later
+- A Razorpay account with API keys
+- Cron or core's auto-cron, for retries and the daily check of pending orders
 
 ## Install
 
-From the admin: **Plugins → Manage plugins → Browse**, find *Razorpay Payment*, then **Install** and activate it. Or upload the zip under **Plugins → Add new**.
+1. Open **Plugins → Browse** (or upload the zip from the GitHub release).
+2. Install.
+3. Activate.
 
-## Settings
+## Set up
 
 1. Open **Settings → Billing → Payment methods** and choose **Set up** next to Razorpay Payment.
-2. In the Razorpay dashboard, switch to test mode, open **Accounts & Settings → API keys**
-   and make a key. Copy the key id (`rzp_test_…`) and the key secret into the test fields.
-3. Open **Accounts & Settings → Webhooks**, add a webhook with the URL the settings page
-   shows:
+2. In the Razorpay dashboard, switch to test mode. Under **Accounts & Settings → API keys**, make a key. Copy the key id (`rzp_test_…`) into **Test key id** and the secret into **Test key secret**.
+3. Under **Accounts & Settings → Webhooks**, add a webhook with the URL shown under **Webhook URL**:
 
    ```
    https://example.com/index.php?page=billing&action=callback&gateway=razorpay
    ```
 
-   set a secret, and select these events:
-
-   - `payment.authorized`
-   - `payment.captured`
-   - `order.paid`
-   - `payment.failed`
-   - `refund.processed`
-
-4. Type the same webhook secret into *Test webhook secret* and save.
-5. Turn on automatic capture under **Accounts & Settings → Payment capture**. If a payment
-   still arrives only authorized, the plugin captures it when the amount matches the order.
-
-Razorpay shows at checkout once the key id and key secret for the active mode are set and
-the site's billing currency is one Razorpay takes. Live mode also needs the webhook secret.
-In test mode it is optional, so a local site Razorpay cannot reach still works: the buyer's
-return settles the payment.
-
-The **Currencies** setting lists the codes Razorpay is offered for, such as `INR, USD`.
-Leave it empty to use the billing currency. A list that leaves out the billing currency
-hides Razorpay at checkout. Any currency but INR needs international payments turned on
-in your Razorpay account.
+   Set a secret and select `payment.authorized`, `payment.captured`, `order.paid`, `payment.failed` and `refund.processed`.
+4. Type the same secret into **Test webhook secret** and save.
+5. Turn on automatic capture under **Accounts & Settings → Payment capture**. If a payment still arrives only authorized, the plugin captures it when the amount matches the order.
+6. To go live, make live keys, add a second webhook in live mode with the same URL and events, fill the **Live** fields, then set **Mode** to *Live*.
 
 Saved secrets are never shown again. Leave a secret's box blank to keep it.
 
-## Test mode
+Optional: **Name at checkout** sets the label buyers see. **Currencies** takes codes such as `INR, USD`.
 
-The plugin starts in test mode, and an admin notice says so. In test mode only a
-signed-in admin sees Razorpay at checkout, so a live site cannot give credits away. Pay
-with Razorpay's [test cards and UPI ids](https://razorpay.com/docs/payments/payments/test-card-upi-details/).
+## How it works
 
-To go live, make live keys, add a second webhook in live mode with the same URL and events,
-fill in the live fields, then switch *Mode* to *Live*.
+- At checkout the plugin creates a Razorpay order for the exact amount and sends the buyer to a pay page on your site. Only that page loads Razorpay's `checkout.js`.
+- On success the page posts Razorpay's signature back. The plugin checks it, fetches the payment from Razorpay and settles the order.
+- The webhook settles it too, for a buyer who closes the tab. The plugin fetches the payment before acting, so an old retried webhook cannot pay a refunded order.
+- A failed attempt leaves the order open so the buyer can try another method.
+- A payment for an order already closed is refunded at Razorpay. If that refund is refused, the site's contact address gets one e-mail.
+- Once a day, pending orders over an hour old are checked with Razorpay. Orders unpaid after two days are closed.
+- To refund, open the order under **Billing → Orders** and press **Refund**. The whole payment is refunded and core takes the credits back. A full refund made in the Razorpay dashboard is recorded the same way.
 
-## How an order is paid
+## Notes / limits
 
-- At checkout the plugin creates a Razorpay order for the exact amount and sends the buyer
-  to a pay page on your site. That page alone loads Razorpay's `checkout.js`.
-- When the payment succeeds, the page posts Razorpay's signature back. The plugin checks it,
-  fetches the payment from Razorpay and settles the order, so the buyer sees "Paid" at once.
-- The webhook settles it too, for a buyer who closes the tab.
-- A failed attempt leaves the order open, so the buyer can try another method.
-- If the site cannot record a payment, it is queued and fetched again later, and Razorpay
-  resends the webhook. If it still fails, the site's contact address gets an e-mail.
-- Once a day, pending Razorpay orders over an hour old are checked with Razorpay. One left
-  unpaid for two days is closed.
+- The plugin starts in test mode, and an admin notice says so. In test mode only a signed-in admin sees Razorpay at checkout. Use Razorpay's [test cards and UPI ids](https://razorpay.com/docs/payments/payments/test-card-upi-details/).
+- Razorpay shows at checkout once the active mode has a key id and secret, and the billing currency is allowed.
+- The webhook secret is optional in test mode and required in live mode.
+- **Currencies** empty means the billing currency. A list without the billing currency hides Razorpay. Any currency but INR needs international payments on in your Razorpay account.
+- Partial refunds change nothing on the site.
+- The pay page needs JavaScript.
+- Several sites can share one account. Give each site its own webhook.
+- Uninstalling removes the settings, keys included. Orders and credits stay. Remove the webhook in Razorpay too.
+- No tables of its own. Retries and the daily check use core's job queue.
 
-A webhook is only a trigger: the plugin fetches the payment from Razorpay before acting, so
-an old retried webhook cannot pay an order that was since refunded. A payment for an order
-already closed (failed or cancelled) is refunded at Razorpay at once. If Razorpay took money the
-site cannot credit otherwise, or refuses that refund, the contact address gets one e-mail for
-that payment.
+## For developers
 
-Every path goes through core's billing checks: amount, currency and owner must match,
-and a replayed webhook credits nothing.
+Registers the gateway on `register_payment_gateways` and listens to `register_jobs`, `cron_daily` and `job_gave_up`. It fires no hooks.
 
-The pay page needs JavaScript. Without it the buyer is told to turn it on.
+Translations: copy `languages/razorpay.pot` to `languages/<locale>/messages.po`, translate, and compile to `messages.mo`. Rebuild the template with `php tools/make-pot.php`.
 
-## Refunds
+Tests: `./tests/run.sh` (unit) and `php tests/integration/billing.php` (needs core's scratch MySQL on port 33061). Core is loaded from `SHOPCLASS_CORE` or a sibling `osclass` checkout.
 
-Open the order under **Billing → Orders** and press **Refund**. The plugin refunds the
-whole payment at Razorpay and core takes the credits back. If Razorpay is still processing
-the refund, the order changes once the `refund.processed` webhook arrives. A full refund
-made in the Razorpay dashboard is recorded the same way. Partial refunds change nothing on
-the site.
+## Support
 
-## Several sites, one Razorpay account
-
-Each site only acts on payments for Razorpay orders it created, so several sites can share
-an account. Give each site its own webhook.
-
-## What it stores
-
-The keys and mode are preferences in the `razorpay` section. An order keeps the Razorpay references it needs in its meta. Retries and the daily check are jobs in core's job queue. No table of its own.
-
-## Hooks
-
-Registers the gateway on `register_payment_gateways`, adds the pay and return pages, and listens to `register_jobs`, `cron_daily` and `job_gave_up`. It fires no hooks.
-
-## Uninstall
-
-Uninstalling removes the plugin's settings, keys included. Orders, payments and credits
-stay in **Billing → Orders**. Remove the webhook in the Razorpay dashboard too.
-
-## Translations
-
-Copy `languages/razorpay.pot` to `languages/<locale>/messages.po`, translate it, and compile
-it to `messages.mo` in the same folder. After changing strings, run `php tools/make-pot.php`.
-
-## Tests
-
-```bash
-./tests/run.sh                                  # unit tests, no network
-php tests/integration/billing.php               # core's scratch MySQL on port 33061
-```
-
-Both load core from `SHOPCLASS_CORE`, or a sibling checkout named `osclass`.
+[GitHub issues](https://github.com/mindstellar/shopclass-plugin-razorpay/issues)
 
 ## License
 
