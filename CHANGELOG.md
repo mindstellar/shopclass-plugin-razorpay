@@ -3,6 +3,7 @@
 ## 0.1.5
 
 ### Changed
+- On Shopclass 7.0 the settings page stays reachable from the plugin list, since 7.0 has no Billing menu for plugin pages.
 - On Shopclass 7.0 the daily check of pending orders is skipped instead of failing.
 - In test mode Razorpay is offered with only the key id and secret; live mode still needs the webhook secret.
 - The settings page moves under Billing.

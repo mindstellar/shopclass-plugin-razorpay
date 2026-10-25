@@ -71,7 +71,8 @@ $capture = static function (): void {
 
 return array(
     'title'      => __('Razorpay Payment', 'razorpay'),
-    'menu'       => 'billing',
+    // Core 7.0 has no Billing menu for plugin pages; there the page is reached from the plugin list.
+    'menu'       => class_exists(\mindstellar\settings\SettingsPageRegistry::class) && in_array('billing', \mindstellar\settings\SettingsPageRegistry::MENUS, true) ? 'billing' : '',
     'menu_title' => __('Razorpay', 'razorpay'),
     'intro'  => __('Take UPI, card, netbanking and wallet payments for credit packages through Razorpay Checkout. Buyers pay in a window hosted by Razorpay, so no card data reaches this site.', 'razorpay'),
     'groups' => array(
