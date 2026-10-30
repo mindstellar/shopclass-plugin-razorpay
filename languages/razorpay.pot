@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Razorpay Payment 0.1.5\n"
+"Project-Id-Version: Razorpay Payment 0.1.7\n"
 "Report-Msgid-Bugs-To: https://github.com/mindstellar/shopclass-plugin-razorpay/issues\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -8,7 +8,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Language: \n"
 
-#: src/RazorpayGateway.php:248
+#: src/RazorpayGateway.php:262
 msgid "%d credits"
 msgstr ""
 
@@ -16,7 +16,7 @@ msgstr ""
 msgid "A Razorpay payment could not be recorded after several tries."
 msgstr ""
 
-#: settings.php:79
+#: settings.php:80
 msgid "Account"
 msgstr ""
 
@@ -24,7 +24,7 @@ msgstr ""
 msgid "Amount"
 msgstr ""
 
-#: views/pay.php:77
+#: views/pay.php:79
 msgid "Back to your orders"
 msgstr ""
 
@@ -36,19 +36,19 @@ msgstr ""
 msgid "Check pending Razorpay orders"
 msgstr ""
 
-#: settings.php:118
+#: settings.php:119
 msgid "Checkout"
 msgstr ""
 
-#: settings.php:133
-msgid "Comma-separated codes. Leave empty to use the billing currency. Any currency but INR needs international payments turned on in your Razorpay account."
+#: settings.php:134
+msgid "Comma-separated codes. Leave empty for INR and the billing currency. Any currency but INR needs international payments turned on in your Razorpay account."
 msgstr ""
 
-#: views/pay.php:44
+#: views/pay.php:45
 msgid "Credits"
 msgstr ""
 
-#: settings.php:131
+#: settings.php:132
 msgid "Currencies"
 msgstr ""
 
@@ -56,11 +56,11 @@ msgstr ""
 msgid "Error: %s"
 msgstr ""
 
-#: settings.php:95
+#: settings.php:96
 msgid "From Accounts & Settings > API keys, in live mode."
 msgstr ""
 
-#: settings.php:92
+#: settings.php:93
 msgid "From Accounts & Settings > API keys, in test mode."
 msgstr ""
 
@@ -68,31 +68,31 @@ msgstr ""
 msgid "In Razorpay, open Accounts & Settings > Webhooks, add a webhook with this URL, set a secret, and select these events:"
 msgstr ""
 
-#: settings.php:96
+#: settings.php:97
 msgid "Leave blank to keep the saved one."
 msgstr ""
 
-#: settings.php:88
+#: settings.php:89
 msgid "Live"
 msgstr ""
 
-#: settings.php:95
+#: settings.php:96
 msgid "Live key id"
 msgstr ""
 
-#: settings.php:96
+#: settings.php:97
 msgid "Live key secret"
 msgstr ""
 
-#: settings.php:97
+#: settings.php:98
 msgid "Live webhook secret"
 msgstr ""
 
-#: settings.php:84
+#: settings.php:85
 msgid "Mode"
 msgstr ""
 
-#: settings.php:123
+#: settings.php:124
 msgid "Name at checkout"
 msgstr ""
 
@@ -108,11 +108,11 @@ msgstr ""
 msgid "Order #%d was not paid."
 msgstr ""
 
-#: views/pay.php:50
+#: views/pay.php:52
 msgid "Pay by UPI, card, netbanking or wallet in Razorpay's secure window. Your card details never reach this site."
 msgstr ""
 
-#: views/pay.php:62
+#: views/pay.php:64
 msgid "Pay now"
 msgstr ""
 
@@ -121,7 +121,7 @@ msgstr ""
 msgid "Pay with Razorpay"
 msgstr ""
 
-#: settings.php:112
+#: settings.php:113
 msgid "Payment capture"
 msgstr ""
 
@@ -137,11 +137,11 @@ msgstr ""
 msgid "Payment received for order #%d."
 msgstr ""
 
-#: views/pay.php:61
+#: views/pay.php:63
 msgid "Payment received. Confirming it..."
 msgstr ""
 
-#: settings.php:75
+#: settings.php:76
 msgid "Razorpay"
 msgstr ""
 
@@ -153,11 +153,11 @@ msgstr ""
 msgid "Razorpay Payment needs Shopclass 7.0 or later and is switched off. Update Shopclass to use it."
 msgstr ""
 
-#: views/pay.php:59
+#: views/pay.php:61
 msgid "Razorpay could not be loaded. Check your connection and reload this page."
 msgstr ""
 
-#: settings.php:142
+#: settings.php:143
 msgid "Razorpay does not take \"%s\""
 msgstr ""
 
@@ -165,11 +165,11 @@ msgstr ""
 msgid "Razorpay is in test mode: no real money is taken. Switch to live mode before the site takes payments."
 msgstr ""
 
-#: views/pay.php:53
+#: views/pay.php:55
 msgid "Razorpay needs JavaScript. Turn it on in your browser, then reload this page."
 msgstr ""
 
-#: src/RazorpayGateway.php:737
+#: src/RazorpayGateway.php:832
 msgid "Razorpay payment could not be started. Please try again later."
 msgstr ""
 
@@ -199,31 +199,31 @@ msgstr ""
 msgid "Retry it under Tools > System info > Jobs (job #%d), and check the order in Billing > Orders."
 msgstr ""
 
-#: settings.php:93
+#: settings.php:94
 msgid "Shown once by Razorpay when the key is made. Saved secrets are never shown again; leave blank to keep the saved one."
 msgstr ""
 
-#: settings.php:76
-msgid "Take UPI, card, netbanking and wallet payments for credit packages through Razorpay Checkout. Buyers pay in a window hosted by Razorpay, so no card data reaches this site."
+#: settings.php:77
+msgid "Take UPI, card, netbanking and wallet payments for shop orders and credit packages through Razorpay Checkout. Buyers pay in a window hosted by Razorpay, so no card data reaches this site."
 msgstr ""
 
-#: settings.php:87
+#: settings.php:88
 msgid "Test"
 msgstr ""
 
-#: settings.php:92
+#: settings.php:93
 msgid "Test key id"
 msgstr ""
 
-#: settings.php:93
+#: settings.php:94
 msgid "Test key secret"
 msgstr ""
 
-#: settings.php:85
+#: settings.php:86
 msgid "Test mode uses your test keys. No real money moves."
 msgstr ""
 
-#: settings.php:94
+#: settings.php:95
 msgid "Test webhook secret"
 msgstr ""
 
@@ -232,15 +232,15 @@ msgstr ""
 msgid "That order is not available."
 msgstr ""
 
-#: views/pay.php:60
+#: views/pay.php:62
 msgid "The payment did not go through. You can try again."
 msgstr ""
 
-#: settings.php:97
+#: settings.php:98
 msgid "The secret you set on your live-mode webhook. Leave blank to keep the saved one."
 msgstr ""
 
-#: settings.php:94
+#: settings.php:95
 msgid "The secret you set on your test-mode webhook. Leave blank to keep the saved one."
 msgstr ""
 
@@ -260,14 +260,14 @@ msgstr ""
 msgid "Turn on automatic capture in Razorpay under Accounts & Settings > Payment capture. If a payment still arrives only authorized, this plugin captures it once the amount matches the order."
 msgstr ""
 
-#: settings.php:124
+#: settings.php:125
 msgid "UPI, cards, netbanking (Razorpay)"
 msgstr ""
 
-#: settings.php:101
+#: settings.php:102
 msgid "Webhook"
 msgstr ""
 
-#: settings.php:106
+#: settings.php:107
 msgid "Webhook URL"
 msgstr ""
