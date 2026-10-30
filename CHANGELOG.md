@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.7
+
+### Fixed
+- The pay page hides the Credits row for a shop order.
+
 ## 0.1.6
 
 ### Changed

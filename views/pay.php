@@ -40,10 +40,12 @@ $options = json_encode($view['options'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_
                 <th scope="row"><?php echo osc_esc_html(__('Amount', 'razorpay')); ?></th>
                 <td><?php echo osc_esc_html(Money::format($order->getAmount(), $order->getCurrency())); ?></td>
             </tr>
+            <?php if ($order->getCredits() > 0) { ?>
             <tr>
                 <th scope="row"><?php echo osc_esc_html(__('Credits', 'razorpay')); ?></th>
                 <td><?php echo number_format($order->getCredits()); ?></td>
             </tr>
+            <?php } ?>
             </tbody>
         </table>
 
