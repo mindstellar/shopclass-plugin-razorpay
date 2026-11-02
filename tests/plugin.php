@@ -12,12 +12,12 @@
 require __DIR__ . '/lib/bootstrap.php';
 // Core 7.0 has no container classes; its Registry does not need them.
 foreach (array('container/ContainerInterface.php', 'container/NotFoundException.php', 'container/Container.php') as $file) {
-    if (is_file(core_path() . '/oc-includes/osclass/classes/' . $file)) {
-        require_once core_path() . '/oc-includes/osclass/classes/' . $file;
+    if (is_file(core_class_file(core_path(), $file))) {
+        require_once core_class_file(core_path(), $file);
     }
 }
 foreach (array('base/Registry.php', 'currency/CurrencyCode.php', 'billing/PaymentGatewayRegistry.php', 'job/Job.php') as $file) {
-    require_once core_path() . '/oc-includes/osclass/classes/' . $file;
+    require_once core_class_file(core_path(), $file);
 }
 
 use mindstellar\billing\Order;
