@@ -322,7 +322,7 @@ final class RazorpayGateway implements Refunds, DashboardLinkGateway
     }
 
     /**
-     * Refund part of a paid order. Core's key is the receipt, so a retried request is refused.
+     * Refund part of a paid order. Core's key is the idempotency key, so a retried request refunds once.
      *
      * @param Order  $order
      * @param int    $amount Micros, in the order's currency
@@ -347,7 +347,7 @@ final class RazorpayGateway implements Refunds, DashboardLinkGateway
             'amount'  => $minor,
             'receipt' => $key,
             'notes'   => array('shopclass_order' => (string) $order->getId(), 'shopclass_refund' => $key),
-        ), false);
+        ), false, $key);
     }
 
     /**
@@ -356,18 +356,24 @@ final class RazorpayGateway implements Refunds, DashboardLinkGateway
      * @param Order               $order
      * @param array<string,mixed> $params
      * @param bool                $full
+     * @param string|null         $key    Idempotency key of a part refund
      *
      * @return CallbackResult
+     * @throws HttpException when a part refund's outcome is unknown (no answer, or a 5xx), so core keeps its key for the retry
      */
-    private function sendRefund(Order $order, array $params, bool $full): CallbackResult
+    private function sendRefund(Order $order, array $params, bool $full, ?string $key = null): CallbackResult
     {
         try {
             $payment = $this->paymentOf($order);
             if ($payment === null) {
                 return CallbackResult::ignored('no Razorpay payment found for this order');
             }
-            $refund = $this->api->refund($payment, $params);
+            $refund = $this->api->refund($payment, $params, $key);
         } catch (HttpException $e) {
+            if (!$full && ($e->getCode() === 0 || $e->getCode() >= 500)) {
+                throw $e;
+            }
+
             return CallbackResult::ignored(self::short($e->getMessage()));
         }
 

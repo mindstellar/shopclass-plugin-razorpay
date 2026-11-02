@@ -39,6 +39,7 @@ pin('for the amount in paise, with core\'s key as the receipt', array(
 
 $gateway->refundPart($order, 100_000_000, 'order:1:refund:2');
 pin('the next part refund has its own receipt', 'order:1:refund:2', $http->lastBody()['receipt']);
+pin('and sends it as the idempotency key', 'order:1:refund:2', $http->requests[count($http->requests) - 1]['headers']['X-Refund-Idempotency'] ?? null);
 
 $http->on('POST', $path, 200, array('id' => 'rfnd_p2', 'status' => 'pending'));
 $r = $gateway->refundPart($order, 1_000_000, 'order:1:refund:3');
@@ -53,8 +54,19 @@ pin('a failed part refund changes nothing, and says why', array(CallbackResult::
 $http->on('POST', $path, 400, array('error' => array('code' => 'BAD_REQUEST_ERROR', 'description' => 'The refund amount provided is greater than amount captured')));
 pin('a refusal comes back with Razorpay\'s reason', 'Razorpay answered 400: The refund amount provided is greater than amount captured (BAD_REQUEST_ERROR)', $gateway->refundPart($order, 400_000_000, 'order:1:refund:5')->getMessage());
 
+$throws = static function (callable $fn): bool {
+    try {
+        $fn();
+    } catch (Throwable $e) {
+        return true;
+    }
+
+    return false;
+};
 $http->down('POST', $path);
-pin('Razorpay down is ignored with a reason', 'Could not reach api.razorpay.com: timeout', $gateway->refundPart($order, 1_000_000, 'order:1:refund:6')->getMessage());
+check('Razorpay down throws, so core keeps the key for the retry', $throws(static fn () => $gateway->refundPart($order, 1_000_000, 'order:1:refund:6')));
+$http->on('POST', $path, 503, array('error' => array('code' => 'SERVER_ERROR', 'description' => 'Server error')));
+check('a Razorpay 5xx throws too', $throws(static fn () => $gateway->refundPart($order, 1_000_000, 'order:1:refund:6')));
 
 harness_section('refused before Razorpay is asked');
 

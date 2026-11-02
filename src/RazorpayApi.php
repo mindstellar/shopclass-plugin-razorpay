@@ -92,28 +92,30 @@ final class RazorpayApi
     }
 
     /**
-     * Refund a payment. Razorpay refuses a second refund with the same receipt.
+     * Refund a payment. With a key, Razorpay answers a repeated request with the first refund.
      *
      * @param string              $id     pay_...
      * @param array<string,mixed> $params
+     * @param string|null         $key    Sent as X-Refund-Idempotency
      *
      * @return array<string,mixed> the refund
      */
-    public function refund(string $id, array $params): array
+    public function refund(string $id, array $params, ?string $key = null): array
     {
-        return $this->call('POST', 'payments/' . rawurlencode($id) . '/refund', $params);
+        return $this->call('POST', 'payments/' . rawurlencode($id) . '/refund', $params, $key !== null ? array('X-Refund-Idempotency' => $key) : array());
     }
 
     /**
-     * @param string              $method
-     * @param string              $path
-     * @param array<string,mixed> $params
+     * @param string               $method
+     * @param string               $path
+     * @param array<string,mixed>  $params
+     * @param array<string,string> $extraHeaders
      *
      * @return array<string,mixed>
      * @throws HttpException on a transport error, an error status or a body that is not JSON. The
      *                       message never holds the key or the Authorization header.
      */
-    private function call(string $method, string $path, array $params = array()): array
+    private function call(string $method, string $path, array $params = array(), array $extraHeaders = array()): array
     {
         if ($this->keyId === '' || $this->keySecret === '') {
             throw new HttpException('No Razorpay API key is set');
@@ -122,7 +124,7 @@ final class RazorpayApi
         $headers = array(
             'Authorization' => 'Basic ' . base64_encode($this->keyId . ':' . $this->keySecret),
             'Accept'        => 'application/json',
-        );
+        ) + $extraHeaders;
         $body = null;
         if ($method === 'POST') {
             $headers['Content-Type'] = 'application/json';
