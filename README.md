@@ -43,6 +43,7 @@ Optional: **Name at checkout** sets the label buyers see. **Currencies** takes c
 - A payment for an order already closed is refunded at Razorpay. If that refund is refused, the site's contact address gets one e-mail.
 - Once a day, pending orders over an hour old are checked with Razorpay. Orders unpaid after two days are closed.
 - To refund, open the order under **Billing → Orders** and press **Refund**. The whole payment is refunded and core takes the credits back. A full refund made in the Razorpay dashboard is recorded the same way.
+- On core 7.1, **Refund part** on a shop order sends part of the money back through Razorpay. The site records it with a credit note, and the order shows **Partly refunded**.
 
 ## Notes / limits
 
@@ -50,7 +51,7 @@ Optional: **Name at checkout** sets the label buyers see. **Currencies** takes c
 - Razorpay shows at checkout once the active mode has a key id and secret, and the billing currency is allowed.
 - The webhook secret is optional in test mode and required in live mode.
 - **Currencies** empty means the billing currency. A list without the billing currency hides Razorpay. Any currency but INR needs international payments on in your Razorpay account.
-- Partial refunds change nothing on the site.
+- A partial refund made in the Razorpay dashboard changes nothing on the site. Use **Refund part** instead.
 - The pay page needs JavaScript.
 - Several sites can share one account. Give each site its own webhook.
 - Uninstalling removes the settings, keys included. Orders and credits stay. Remove the webhook in Razorpay too.

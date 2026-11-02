@@ -19,7 +19,6 @@ use mindstellar\billing\CallbackResult;
 use mindstellar\billing\CheckoutIntent;
 use mindstellar\billing\DashboardLinkGateway;
 use mindstellar\billing\Order;
-use mindstellar\billing\RefundableGateway;
 use mindstellar\http\HttpClient;
 use mindstellar\http\HttpException;
 use Throwable;
@@ -28,7 +27,7 @@ use Throwable;
  * Razorpay Standard Checkout as a Shopclass payment gateway. Orders settle only from signed
  * webhooks or payments fetched from Razorpay, always through Billing::handleCallback() so core's checks apply.
  */
-final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
+final class RazorpayGateway implements Refunds, DashboardLinkGateway
 {
     /** Gateway id stored on every order. */
     public const ID = 'razorpay';
@@ -315,17 +314,66 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
      */
     public function refund(Order $order): CallbackResult
     {
+        // The receipt makes Razorpay refuse a second refund for the same order.
+        return $this->sendRefund($order, array(
+            'receipt' => 'refund-order-' . $order->getId(),
+            'notes'   => array('shopclass_order' => (string) $order->getId()),
+        ), true);
+    }
+
+    /**
+     * Refund part of a paid order. Core's key is the idempotency key, so a retried request refunds once.
+     *
+     * @param Order  $order
+     * @param int    $amount Micros, in the order's currency
+     * @param string $key    Core's refund key, such as order:12:refund:2
+     *
+     * @return CallbackResult refunded() or refundPending() with the refund id once Razorpay took it
+     */
+    public function refundPart(Order $order, int $amount, string $key): CallbackResult
+    {
+        if (!preg_match('/^[A-Za-z0-9:_-]{1,40}$/', $key)) {
+            return CallbackResult::ignored('malformed refund key');
+        }
+        if ($amount <= 0 || $amount > $order->getAmount()) {
+            return CallbackResult::ignored('the refund must be more than 0 and at most the order total');
+        }
+        $minor = Money::toMinor($amount, $order->getCurrency());
+        if ($minor === null || $minor === 0) {
+            return CallbackResult::ignored('amount cannot be refunded in ' . strtoupper($order->getCurrency()));
+        }
+
+        return $this->sendRefund($order, array(
+            'amount'  => $minor,
+            'receipt' => $key,
+            'notes'   => array('shopclass_order' => (string) $order->getId(), 'shopclass_refund' => $key),
+        ), false, $key);
+    }
+
+    /**
+     * Ask Razorpay to refund the order's payment: in full, or the amount in $params.
+     *
+     * @param Order               $order
+     * @param array<string,mixed> $params
+     * @param bool                $full
+     * @param string|null         $key    Idempotency key of a part refund
+     *
+     * @return CallbackResult
+     * @throws HttpException when a part refund's outcome is unknown (no answer, or a 5xx), so core keeps its key for the retry
+     */
+    private function sendRefund(Order $order, array $params, bool $full, ?string $key = null): CallbackResult
+    {
         try {
             $payment = $this->paymentOf($order);
             if ($payment === null) {
                 return CallbackResult::ignored('no Razorpay payment found for this order');
             }
-            // The receipt makes Razorpay refuse a second refund for the same order.
-            $refund = $this->api->refund($payment, array(
-                'receipt' => 'refund-order-' . $order->getId(),
-                'notes'   => array('shopclass_order' => (string) $order->getId()),
-            ));
+            $refund = $this->api->refund($payment, $params, $key);
         } catch (HttpException $e) {
+            if (!$full && ($e->getCode() === 0 || $e->getCode() >= 500)) {
+                throw $e;
+            }
+
             return CallbackResult::ignored(self::short($e->getMessage()));
         }
 
@@ -338,8 +386,8 @@ final class RazorpayGateway implements RefundableGateway, DashboardLinkGateway
             return CallbackResult::refunded($order->getId(), $id);
         }
         if ($status === 'pending') {
-            // The refund.processed webhook settles the order once Razorpay finishes.
-            return self::pendingRefund($order, $id, 'Razorpay is processing the refund; the order updates when it completes.');
+            // The refund.processed webhook settles a full refund once Razorpay finishes.
+            return self::pendingRefund($order, $id, 'Razorpay is processing the refund' . ($full ? '; the order updates when it completes.' : '.'));
         }
 
         return CallbackResult::ignored('Razorpay did not accept the refund' . ($status !== '' ? ' (' . $status . ')' : ''));

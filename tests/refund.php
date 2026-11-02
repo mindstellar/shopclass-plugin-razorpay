@@ -22,6 +22,7 @@ $order   = $orders->add(499_000_000, 'INR', 'pay_Test1', 'paid');
 harness_section('refund');
 
 check('the gateway offers refunds', $gateway instanceof RefundableGateway);
+check('offers part refunds only on a core that has them', ($gateway instanceof \mindstellar\billing\PartialRefundableGateway) === interface_exists('mindstellar\\billing\\PartialRefundableGateway'));
 
 $http->on('POST', 'payments/pay_Test1/refund', 200, array('id' => 'rfnd_1', 'entity' => 'refund', 'amount' => 49900, 'status' => 'processed'));
 $r = $gateway->refund($order);
