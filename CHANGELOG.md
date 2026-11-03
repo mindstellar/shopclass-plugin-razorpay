@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+### Changed
+- The checks for cores older than 7.1 are removed.
+
 ## 0.2.0
 
 ### Changed

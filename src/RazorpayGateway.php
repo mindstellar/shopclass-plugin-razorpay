@@ -143,11 +143,6 @@ final class RazorpayGateway implements Refunds, DashboardLinkGateway
         if (!$this->hasKeys() || $currencies === array()) {
             return false;
         }
-        // Shopclass 7.1 lists credit-package gateways by the billing currency (osc_billing_gateways()); 7.0 does not.
-        if (!function_exists('osc_billing_gateways') && !in_array($this->config->billingCurrency, $currencies, true)) {
-            return false;
-        }
-
         return $this->config->live() || ($this->config->isAdmin !== null && ($this->config->isAdmin)());
     }
 
@@ -254,7 +249,7 @@ final class RazorpayGateway implements Refunds, DashboardLinkGateway
      */
     private static function describe(Order $order): string
     {
-        if (method_exists($order, 'isGoods') && $order->isGoods()) {
+        if ($order->isGoods()) {
             return mb_substr($order->getLabel(), 0, 255);
         }
 
@@ -405,9 +400,7 @@ final class RazorpayGateway implements Refunds, DashboardLinkGateway
      */
     private static function pendingRefund(Order $order, string $id, string $message): CallbackResult
     {
-        return method_exists(CallbackResult::class, 'refundPending')
-            ? CallbackResult::refundPending($order->getId(), $message, $id)
-            : CallbackResult::ignored($message);
+        return CallbackResult::refundPending($order->getId(), $message, $id);
     }
 
     /**
@@ -876,9 +869,7 @@ final class RazorpayGateway implements Refunds, DashboardLinkGateway
     {
         error_log('Razorpay: checkout for order #' . $order->getId() . ' failed: ' . self::short($reason));
         $this->orders->markFailed($order->getId());
-        if (function_exists('osc_add_flash_error_message')) {
-            osc_add_flash_error_message(__('Razorpay payment could not be started. Please try again later.', 'razorpay'));
-        }
+        osc_add_flash_error_message(__('Razorpay payment could not be started. Please try again later.', 'razorpay'));
 
         return CheckoutIntent::redirect($this->config->cancelUrl);
     }

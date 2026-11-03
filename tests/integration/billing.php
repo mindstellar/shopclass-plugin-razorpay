@@ -202,7 +202,7 @@ harness_section('a goods order');
 $goods = OrderStore::create($buyer, RazorpayGateway::ID, 499_000_000, 'INR', 0, array('_kind' => 'goods', '_label' => 'Linen tee × 2 and 1 more'));
 $http->on('POST', 'orders', 200, $remote($goods));
 $gateway->createCheckout($goods);
-pin('Checkout describes it by its label, on a core that has one', method_exists($goods, 'isGoods') ? 'Linen tee × 2 and 1 more' : '0 credits', $gateway->payOptions(OrderStore::find($goods->getId()))['description'] ?? null);
+pin('Checkout describes it by its label', 'Linen tee × 2 and 1 more', $gateway->payOptions(OrderStore::find($goods->getId()))['description'] ?? null);
 $balance = Wallet::balance($buyer);
 $webhook(event('payment.captured', payment($goods, array('amount' => 100))), 'evt_goods_short');
 pin('a payment for another amount is refused by core', Order::STATUS_PENDING, $status($goods));

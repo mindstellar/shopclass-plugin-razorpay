@@ -18,14 +18,6 @@ use mindstellar\razorpay\Config;
 use mindstellar\razorpay\RazorpayGateway;
 use mindstellar\razorpay\Signature;
 
-// Core 7.1 lists credit-package gateways by the billing currency; the 7.0 fallback is tested in checkout-70.php.
-if (!function_exists('osc_billing_gateways')) {
-    function osc_billing_gateways(): array
-    {
-        return array();
-    }
-}
-
 harness_section('isConfigured');
 
 $http   = new FakeHttp();
@@ -138,7 +130,7 @@ pin('everything Checkout needs, and no secret', array(
     'prefill'     => array('email' => 'buyer@example.test'),
 ), $options);
 $goods = $orders->add(499_000_000, 'INR', 'order_TestGoods', Order::STATUS_PENDING, 'razorpay', '2026-01-01 00:00:00', array('_kind' => 'goods', '_label' => 'Linen tee × 2 and 1 more'));
-pin('a goods order is described by its label, on a core that has one', method_exists($goods, 'isGoods') ? 'Linen tee × 2 and 1 more' : '100 credits', $gateway->payOptions($goods)['description'] ?? null);
+pin('a goods order is described by its label', 'Linen tee × 2 and 1 more', $gateway->payOptions($goods)['description'] ?? null);
 check('no e-mail, no prefill', !isset($gateway->payOptions($orders->find(1))['prefill']));
 pin('a paid order has nothing to pay', null, $gateway->payOptions($orders->add(499_000_000, 'INR', 'pay_X', 'paid')));
 pin('nor an order without a Razorpay order', null, $gateway->payOptions($orders->add()));

@@ -13,6 +13,7 @@ require __DIR__ . '/lib/bootstrap.php';
 
 $GLOBALS['__hooks']    = array();
 $GLOBALS['__routes']   = array();
+$GLOBALS['__filters']  = array();
 $GLOBALS['__settings'] = array();
 $GLOBALS['__install']  = null;
 
@@ -27,6 +28,14 @@ function osc_register_plugin($path, $fn)
 function osc_add_hook($name, $fn, $priority = 10)
 {
     $GLOBALS['__hooks'][$name][] = $fn;
+}
+function osc_add_filter($name, $fn, $priority = 10)
+{
+    $GLOBALS['__filters'][$name][] = $fn;
+}
+function osc_billing_order_return_url($id)
+{
+    return '';
 }
 function osc_register_settings_page($id, $spec)
 {
@@ -80,21 +89,12 @@ pin('jobs, the daily check and the give-up mail', array(
     array(array(Plugin::class, 'daily')),
     array(array(Plugin::class, 'jobGaveUp')),
 ), array($GLOBALS['__hooks']['register_jobs'] ?? null, $GLOBALS['__hooks']['cron_daily'] ?? null, $GLOBALS['__hooks']['job_gave_up'] ?? null));
-pin('the test-mode notice', array(array(Plugin::class, 'adminNotice')), $GLOBALS['__hooks']['admin_page_header'] ?? null);
+pin('the test-mode notice is core\'s shared one', 1, count($GLOBALS['__filters']['admin_payment_test_modes'] ?? array()));
+pin('and no banner of the plugin\'s own', null, $GLOBALS['__hooks']['admin_page_header'] ?? null);
 check('job types are namespaced', preg_match('/^[a-z0-9_]+\.[a-z0-9_.]+$/', Plugin::JOB_PAYMENT) && preg_match('/^[a-z0-9_]+\.[a-z0-9_.]+$/', Plugin::JOB_RECONCILE));
 
 $index = (string) file_get_contents(__DIR__ . '/../index.php');
-check('an older core without the HTTP client or admin mail keeps the plugin off', str_contains($index, "interface_exists('mindstellar\\\\http\\\\HttpClient')") && str_contains($index, "function_exists('osc_mail_admin')"));
 check('the plugin ships no HTTP client of its own', !is_dir(__DIR__ . '/../src/Http'));
-
-harness_section('on a core without admin mail');
-
-$child = shell_exec('RAZORPAY_TEST_OLD_CORE=1 ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/lib/old-core.php'));
-$old   = json_decode((string) $child, true);
-check('the check ran on a core without osc_mail_admin()', is_array($old) && $old['mail_admin'] === false, (string) $child);
-pin('no settings page and no routes', array(array(), array()), array($old['settings'] ?? null, $old['routes'] ?? null));
-pin('only install, uninstall and the notice are hooked', array('razorpay/index.php_uninstall', 'admin_page_header'), $old['hooks'] ?? null);
-check('the notice tells the admin to update', str_contains((string) ($old['notice'] ?? ''), 'needs Shopclass 7.0 or later'));
 
 harness_section('the pay page script');
 

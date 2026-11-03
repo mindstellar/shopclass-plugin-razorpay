@@ -171,7 +171,7 @@ final class Plugin
 
         $options = $order->isPending() ? $gateway->payOptions($order, $orders->buyerEmail($userId)) : null;
         if ($options === null) {
-            self::flashOutcome($order->getId(), $order->getStatus(), $order->getStatus(), method_exists($order, 'isGoods') && $order->isGoods());
+            self::flashOutcome($order->getId(), $order->getStatus(), $order->getStatus(), $order->isGoods());
 
             return null;
         }
@@ -220,7 +220,7 @@ final class Plugin
             osc_redirect_to(osc_base_url());
         }
         $orderId = Params::getParamInt('order');
-        osc_redirect_to($status !== '' && function_exists('osc_billing_order_return_url') ? osc_billing_order_return_url($orderId) : osc_billing_orders_url());
+        osc_redirect_to($status !== '' ? osc_billing_order_return_url($orderId) : osc_billing_orders_url());
     }
 
     /**
@@ -269,7 +269,7 @@ final class Plugin
 
         $now   = $orders->find($order->getId());
         $after = $now === null ? '' : $now->getStatus();
-        self::flashOutcome($order->getId(), $before, $after, method_exists($order, 'isGoods') && $order->isGoods());
+        self::flashOutcome($order->getId(), $before, $after, $order->isGoods());
 
         return $after;
     }
@@ -393,21 +393,5 @@ final class Plugin
         ));
 
         return true;
-    }
-
-    /**
-     * A notice on every admin page while test mode is on.
-     *
-     * @return void
-     */
-    public static function adminNotice(): void
-    {
-        if (!osc_billing_enabled() || osc_settings_value(self::PAGE, 'mode') === 'live') {
-            return;
-        }
-        echo '<div class="flashmessage flashmessage-warning" role="status">'
-            . osc_esc_html(__('Razorpay is in test mode: no real money is taken. Switch to live mode before the site takes payments.', 'razorpay'))
-            . ' <a href="' . osc_esc_html(osc_settings_page_url(self::PAGE)) . '">'
-            . osc_esc_html(__('Razorpay settings', 'razorpay')) . '</a></div>';
     }
 }
