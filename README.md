@@ -4,8 +4,8 @@ Take UPI, card, netbanking and wallet payments for shop orders and credit packag
 
 ## Requirements
 
-- Shopclass 7.0.0 or later, with billing turned on
-- PHP 8.0 or later
+- Shopclass 7.1.0 or later, with billing turned on
+- PHP 8.2 or later
 - A Razorpay account with API keys
 - Cron or core's auto-cron, for retries and the daily check of pending orders
 

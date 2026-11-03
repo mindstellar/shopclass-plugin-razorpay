@@ -13,7 +13,7 @@ if (!defined('ABS_PATH')) {
  */
 
 use mindstellar\billing\Order;
-use mindstellar\currency\Money;
+use mindstellar\currency\CurrencyService;
 
 /*
  * The pay page: content only, wrapped by the theme's or core's page chrome.
@@ -38,7 +38,7 @@ $options = json_encode($view['options'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_
             </tr>
             <tr>
                 <th scope="row"><?php echo osc_esc_html(__('Amount', 'razorpay')); ?></th>
-                <td><?php echo osc_esc_html(Money::format($order->getAmount(), $order->getCurrency())); ?></td>
+                <td><?php echo osc_esc_html(CurrencyService::make()->money($order->getAmount(), $order->getCurrency())); ?></td>
             </tr>
             <?php if ($order->getCredits() > 0) { ?>
             <tr>

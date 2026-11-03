@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+
+### Changed
+- Needs Shopclass 7.1.0 and PHP 8.2 or newer. The pay page shows the amount as orders do, such as ₹1,234.50.
+
 ## 0.1.9
 
 ### New

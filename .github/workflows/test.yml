@@ -1,6 +1,5 @@
-# Runs the unit tests on every push and pull request: PHP 8.0 against core's release/7.0 branch,
-# PHP 8.3 against develop (SHOPCLASS_CORE_REF overrides it). The integration test covers 7.1
-# billing, so it runs on develop only; it needs MySQL.
+# Runs the unit tests on every push and pull request, on PHP 8.2 and 8.5 against core's develop
+# (SHOPCLASS_CORE_REF overrides it). The integration test needs MySQL.
 name: test
 
 on:
@@ -17,9 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - php: '8.0'
-            core: release/7.0
-          - php: '8.3'
+          - php: '8.2'
+            core: develop
+          - php: '8.5'
             core: develop
     services:
       mysql:

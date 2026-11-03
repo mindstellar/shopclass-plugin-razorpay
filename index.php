@@ -3,13 +3,13 @@
 Plugin Name: Razorpay Payment
 Plugin URI: https://github.com/mindstellar/shopclass-plugin-razorpay
 Description: Take UPI, card, netbanking and wallet payments for shop orders and credit packages through Razorpay Checkout. Card data stays with Razorpay; a signed webhook marks the order paid. Refunds from the admin.
-Version: 0.1.9
+Version: 0.2.0
 Author: Navjot Tomer (Mindstellar)
 Author URI: https://mindstellar.com
 Short Name: razorpay
-Requires Shopclass: 7.0.0
+Requires Shopclass: 7.1.0
 Tested up to: 7.1
-Requires PHP: 8.0
+Requires PHP: 8.2
 Support URI: https://github.com/mindstellar/shopclass-plugin-razorpay/issues
 Modes: classifieds, shop
 */
