@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+### Changed
+- Admin pages are under Plugins → Razorpay.
+
 ## 0.2.1
 
 ### Changed
